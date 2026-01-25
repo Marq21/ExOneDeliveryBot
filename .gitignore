@@ -1,1 +1,176 @@
+<<<<<<< HEAD
 # Python__pycache__/*.py[cod]*$py.class*.so.Pythonbuild/develop-eggs/dist/downloads/eggs/.eggs/lib/lib64/parts/sdist/var/wheels/*.egg-info/.installed.cfg*.eggMANIFESTpip-wheel-metadata/share/python-wheels/# PyInstaller*.manifest*.spec# Installer logspip-log.txtpip-delete-this-directory.txt# Unit test / coverage reportshtmlcov/.tox/.nox/.coverage.coverage.*.cachenosetests.xmlcoverage.xml*.cover*.py,cover.hypothesis/.pytest_cache/cover/# Environments.env.venvenv/venv/ENV/env.bak/venv.bak/# IDE.vscode/.idea/*.swp*.swo*~.DS_Store.project.settings/*.sublime-workspace*.sublime-project# Bot specific# Êîíôèãóðàöèîííûå ôàéëû ñ ÷óâñòâèòåëüíûìè äàííûìèconfig.py*.env.env.local.env.development.env.productionsecrets.jsoncredentials.json# Âðåìåííûå ôàéëû è êýødownloads/temp/tmp/cache/*.cache*.log# Áàçû äàííûõ*.db*.sqlite*.sqlite3dump.sqlbackup/# Ëîãèlogs/*.logbot.logerror.log# Èçîáðàæåíèÿ (êðîìå ñòàòè÷íûõ äëÿ áîòà)# !images/  # ðàñêîììåíòèðîâàòü åñëè íóæíî õðàíèòü ïðèìåðû èçîáðàæåíèéimages/temp/images/cache/# Ìèãðàöèè ÁÄ (åñëè áóäóò)migrations/# Jupyter Notebook.ipynb_checkpoints# mypy.mypy_cache/.dmypy.jsondmypy.json# Pyre type checker.pyre/# PyCharm.idea/*.imlout/# VS Code.vscode/*!.vscode/settings.json!.vscode/tasks.json!.vscode/launch.json!.vscode/extensions.json# WindowsThumbs.dbehthumbs.dbDesktop.ini# macOS.DS_Store.AppleDouble.LSOverrideIcon._*.Spotlight-V100.Trashes# Linux*~# Âðåìåííûå ôàéëû îò ïàðñåðîâ*.tmp*.temp# Ôàéëû ñ API êëþ÷àìè è òîêåíàìè*_key.txt*_token.txtapi_keys.txt# Ôàéëû ñ íàñòðîéêàìè îôèñîâ (åñëè ñîäåðæàò ÷óâñòâèòåëüíûå äàííûå)offices_config.pychats_config.py# Ôàéëû ñåññèésession_**.session# Õðàíèòü òîëüêî íåîáõîäèìûå èçîáðàæåíèÿimages/*!images/ozon-ok.png!images/wb-ok.png!images/ozon.png!images/wb.jpg!images/README.md
+=======
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+pip-wheel-metadata/
+share/python-wheels/
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+cover/
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+.project
+.settings/
+*.sublime-workspace
+*.sublime-project
+
+# Bot specific
+# ÐšÐ¾Ð½Ñ„Ð¸Ð³ÑƒÑ€Ð°Ñ†Ð¸Ð¾Ð½Ð½Ñ‹Ðµ Ñ„Ð°Ð¹Ð»Ñ‹ Ñ Ñ‡ÑƒÐ²ÑÑ‚Ð²Ð¸Ñ‚ÐµÐ»ÑŒÐ½Ñ‹Ð¼Ð¸ Ð´Ð°Ð½Ð½Ñ‹Ð¼Ð¸
+config.py
+*.env
+.env.local
+.env.development
+.env.production
+secrets.json
+credentials.json
+
+# Ð’Ñ€ÐµÐ¼ÐµÐ½Ð½Ñ‹Ðµ Ñ„Ð°Ð¹Ð»Ñ‹ Ð¸ ÐºÑÑˆ
+downloads/
+temp/
+tmp/
+cache/
+*.cache
+*.log
+
+# Ð‘Ð°Ð·Ñ‹ Ð´Ð°Ð½Ð½Ñ‹Ñ…
+*.db
+*.sqlite
+*.sqlite3
+dump.sql
+backup/
+
+# Ð›Ð¾Ð³Ð¸
+logs/
+*.log
+bot.log
+error.log
+
+# Ð˜Ð·Ð¾Ð±Ñ€Ð°Ð¶ÐµÐ½Ð¸Ñ (ÐºÑ€Ð¾Ð¼Ðµ ÑÑ‚Ð°Ñ‚Ð¸Ñ‡Ð½Ñ‹Ñ… Ð´Ð»Ñ Ð±Ð¾Ñ‚Ð°)
+# !images/  # Ñ€Ð°ÑÐºÐ¾Ð¼Ð¼ÐµÐ½Ñ‚Ð¸Ñ€Ð¾Ð²Ð°Ñ‚ÑŒ ÐµÑÐ»Ð¸ Ð½ÑƒÐ¶Ð½Ð¾ Ñ…Ñ€Ð°Ð½Ð¸Ñ‚ÑŒ Ð¿Ñ€Ð¸Ð¼ÐµÑ€Ñ‹ Ð¸Ð·Ð¾Ð±Ñ€Ð°Ð¶ÐµÐ½Ð¸Ð¹
+images/temp/
+images/cache/
+
+# ÐœÐ¸Ð³Ñ€Ð°Ñ†Ð¸Ð¸ Ð‘Ð” (ÐµÑÐ»Ð¸ Ð±ÑƒÐ´ÑƒÑ‚)
+migrations/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyre type checker
+.pyre/
+
+# PyCharm
+.idea/
+*.iml
+out/
+
+# VS Code
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+.Spotlight-V100
+.Trashes
+
+# Linux
+*~
+
+# Ð’Ñ€ÐµÐ¼ÐµÐ½Ð½Ñ‹Ðµ Ñ„Ð°Ð¹Ð»Ñ‹ Ð¾Ñ‚ Ð¿Ð°Ñ€ÑÐµÑ€Ð¾Ð²
+*.tmp
+*.temp
+
+# Ð¤Ð°Ð¹Ð»Ñ‹ Ñ API ÐºÐ»ÑŽÑ‡Ð°Ð¼Ð¸ Ð¸ Ñ‚Ð¾ÐºÐµÐ½Ð°Ð¼Ð¸
+*_key.txt
+*_token.txt
+api_keys.txt
+
+# Ð¤Ð°Ð¹Ð»Ñ‹ Ñ Ð½Ð°ÑÑ‚Ñ€Ð¾Ð¹ÐºÐ°Ð¼Ð¸ Ð¾Ñ„Ð¸ÑÐ¾Ð² (ÐµÑÐ»Ð¸ ÑÐ¾Ð´ÐµÑ€Ð¶Ð°Ñ‚ Ñ‡ÑƒÐ²ÑÑ‚Ð²Ð¸Ñ‚ÐµÐ»ÑŒÐ½Ñ‹Ðµ Ð´Ð°Ð½Ð½Ñ‹Ðµ)
+offices_config.py
+chats_config.py
+
+# Ð¤Ð°Ð¹Ð»Ñ‹ ÑÐµÑÑÐ¸Ð¹
+session_*
+*.session
+
+# Ð¥Ñ€Ð°Ð½Ð¸Ñ‚ÑŒ Ñ‚Ð¾Ð»ÑŒÐºÐ¾ Ð½ÐµÐ¾Ð±Ñ…Ð¾Ð´Ð¸Ð¼Ñ‹Ðµ Ð¸Ð·Ð¾Ð±Ñ€Ð°Ð¶ÐµÐ½Ð¸Ñ
+images/*
+!images/ozon-ok.png
+!images/wb-ok.png
+!images/ozon.png
+!images/wb.jpg
+!images/README.md
+>>>>>>> 47bf867af30e6d3f4310f269eda17fcc352bf95a
