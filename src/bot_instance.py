@@ -1,4 +1,3 @@
-# src/bot_instance.py
 from aiogram import Bot, Dispatcher
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from src.config.settings import settings

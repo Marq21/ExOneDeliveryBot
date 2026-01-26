@@ -1,5 +1,176 @@
 <<<<<<< HEAD
-# Python__pycache__/*.py[cod]*$py.class*.so.Pythonbuild/develop-eggs/dist/downloads/eggs/.eggs/lib/lib64/parts/sdist/var/wheels/*.egg-info/.installed.cfg*.eggMANIFESTpip-wheel-metadata/share/python-wheels/# PyInstaller*.manifest*.spec# Installer logspip-log.txtpip-delete-this-directory.txt# Unit test / coverage reportshtmlcov/.tox/.nox/.coverage.coverage.*.cachenosetests.xmlcoverage.xml*.cover*.py,cover.hypothesis/.pytest_cache/cover/# Environments.env.venvenv/venv/ENV/env.bak/venv.bak/# IDE.vscode/.idea/*.swp*.swo*~.DS_Store.project.settings/*.sublime-workspace*.sublime-project# Bot specific# Конфигурационные файлы с чувствительными даннымиconfig.py*.env.env.local.env.development.env.productionsecrets.jsoncredentials.json# Временные файлы и кэшdownloads/temp/tmp/cache/*.cache*.log# Базы данных*.db*.sqlite*.sqlite3dump.sqlbackup/# Логиlogs/*.logbot.logerror.log# Изображения (кроме статичных для бота)# !images/  # раскомментировать если нужно хранить примеры изображенийimages/temp/images/cache/# Миграции БД (если будут)migrations/# Jupyter Notebook.ipynb_checkpoints# mypy.mypy_cache/.dmypy.jsondmypy.json# Pyre type checker.pyre/# PyCharm.idea/*.imlout/# VS Code.vscode/*!.vscode/settings.json!.vscode/tasks.json!.vscode/launch.json!.vscode/extensions.json# WindowsThumbs.dbehthumbs.dbDesktop.ini# macOS.DS_Store.AppleDouble.LSOverrideIcon._*.Spotlight-V100.Trashes# Linux*~# Временные файлы от парсеров*.tmp*.temp# Файлы с API ключами и токенами*_key.txt*_token.txtapi_keys.txt# Файлы с настройками офисов (если содержат чувствительные данные)offices_config.pychats_config.py# Файлы сессийsession_**.session# Хранить только необходимые изображенияimages/*!images/ozon-ok.png!images/wb-ok.png!images/ozon.png!images/wb.jpg!images/README.md
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+pip-wheel-metadata/
+share/python-wheels/
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+cover/
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+.project
+.settings/
+*.sublime-workspace
+*.sublime-project
+
+# Bot specific
+# пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+config.py
+*.env
+.env.local
+.env.development
+.env.production
+secrets.json
+credentials.json
+
+# пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅ
+downloads/
+temp/
+tmp/
+cache/
+*.cache
+*.log
+
+# пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
+*.db
+*.sqlite
+*.sqlite3
+dump.sql
+backup/
+
+# пїЅпїЅпїЅпїЅ
+logs/
+*.log
+bot.log
+error.log
+
+# пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ (пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅ)
+# !images/  # пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+images/temp/
+images/cache/
+
+# пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ (пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ)
+migrations/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyre type checker
+.pyre/
+
+# PyCharm
+.idea/
+*.iml
+out/
+
+# VS Code
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+.Spotlight-V100
+.Trashes
+
+# Linux
+*~
+
+# пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+*.tmp
+*.temp
+
+# пїЅпїЅпїЅпїЅпїЅ пїЅ API пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+*_key.txt
+*_token.txt
+api_keys.txt
+
+# пїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ (пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ)
+offices_config.py
+chats_config.py
+
+# пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
+session_*
+*.session
+
+# пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+images/*
+!images/ozon-ok.png
+!images/wb-ok.png
+!images/ozon.png
+!images/wb.jpg
+!images/README.md
 =======
 # Python
 __pycache__/
@@ -79,6 +250,8 @@ config.py
 .env.production
 secrets.json
 credentials.json
+constants.dev.json
+src/config/constants.dev.json
 
 # Р’СЂРµРјРµРЅРЅС‹Рµ С„Р°Р№Р»С‹ Рё РєСЌС€
 downloads/

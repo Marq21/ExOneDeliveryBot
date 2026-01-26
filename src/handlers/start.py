@@ -1,4 +1,3 @@
-# src/handlers/start.py
 from aiogram import types
 from aiogram.dispatcher import Dispatcher
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
@@ -23,25 +22,25 @@ async def cmd_start(message: types.Message):
 # Обработчик текстовых сообщений меню
 async def handle_menu(message: types.Message):
     text = message.text.strip()
-    if text == "📤 Отправить код":
-        # Позже перенесём логику отправки кода
-        await message.answer("Функция отправки кода будет здесь.")
-    elif text == "🔍 Проверить статус":
+    if text == "🔍 Проверить статус":
         await message.answer("Функция проверки статуса будет здесь.")
     elif text == "❓ Ответы на вопросы":
         await send_faq(message)
     else:
-        await message.answer("Пожалуйста, используйте кнопки меню.", reply_markup=get_main_menu())
+        # Игнорируем "Отправить код" — его ловит send_code.py
+        # Но можно показать меню, если сообщение неизвестное
+        if text not in ["📤 Отправить код"]:
+            await message.answer("Пожалуйста, используйте кнопки меню.", reply_markup=get_main_menu())
 
 # Отправка FAQ
 async def send_faq(message: types.Message):
     config = ConfigLoader.get_config()
     
     # Формируем ответ из office_schedules и offices
-    lines = ["<b>?? Ответы на вопросы</b>\n"]
+    lines = ["<b> Ответы на вопросы</b>\n"]
     
     # График работы
-    lines.append("<b>? График работы:</b>")
+    lines.append("<b> График работы:</b>")
     for office in config["offices"]:
         office_id = office["id"]
         schedule = config["office_schedules"].get(office_id, "Не указан")
@@ -55,7 +54,6 @@ async def send_faq(message: types.Message):
     
     await message.answer("\n".join(lines), parse_mode="HTML")
 
-# Регистрация хендлеров
 def register_start_handlers(dp: Dispatcher):
     dp.register_message_handler(cmd_start, commands=["start"])
     dp.register_message_handler(handle_menu)
