@@ -1,43 +1,24 @@
-import cv2
-import numpy as np
-from pyzbar import pyzbar
+import logging
+from pathlib import Path
 from aiogram import types
-from aiogram.dispatcher import Dispatcher, FSMContext
+from aiogram.dispatcher import FSMContext
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from src.states.code_states import CodeStates
 from src.utils.config_loader import ConfigLoader
 from src.bot_instance import bot
+from src.handlers.start import get_main_menu
+from src.services.code_processing import process_final_order_data
 import aiofiles
 import aiofiles.os as aios
-from pathlib import Path
-import logging
-from src.handlers.start import get_main_menu
 
 
 logger = logging.getLogger(__name__)
 
-def extract_code_from_image(image_bytes: bytes) -> str | None:
-    """Извлечение кода из изображения"""
-    try:
-        image = cv2.imdecode(np.frombuffer(image_bytes, np.uint8), cv2.IMREAD_COLOR)
-        if image is None:
-            logger.error("Failed to decode image")
-            return None
-            
-        decoded_objects = pyzbar.decode(image)
-        for obj in decoded_objects:
-            if obj.type in ('CODE128', 'QRCODE'):
-                return obj.data.decode('utf-8')
-        return None
-    except Exception as e:
-        logger.error(f"Error extracting code from image: {e}")
-        return None
 
-def get_office_keyboard():
-    """Создание клавиатуры для выбора офиса"""
+def get_office_keyboard() -> InlineKeyboardMarkup:
+    """Создает клавиатуру выбора офиса с кнопками 'Назад' и 'В меню'. 'Назад' возвращает к выбору магазина."""
     keyboard = InlineKeyboardMarkup(row_width=1)
     config = ConfigLoader.get_config()
-    
     for office in config.get("offices", []):
         keyboard.add(
             InlineKeyboardButton(
@@ -45,132 +26,139 @@ def get_office_keyboard():
                 callback_data=f"office_{office['id']}"
             )
         )
-    
-    # Добавляем кнопку возврата
-    keyboard.add(
-        InlineKeyboardButton("◀️ Назад", callback_data="back_to_store_choice"),
-        InlineKeyboardButton("🏠 В меню", callback_data="back_to_menu")
+    # Кнопка "Назад" возвращает к предыдущему шагу (выбор магазина)
+    # Она будет обработана как специфичный callback в нужном состоянии или как глобальная (но лучше специфично)
+    keyboard.row(
+        InlineKeyboardButton("◀️ Назад", callback_data="back_to_store_choice"), # Явный вызов функции вручную
+        InlineKeyboardButton("🏠 В меню", callback_data="back_to_menu")      # Обрабатывается глобально
     )
-    
     return keyboard
 
 
 async def start_send_code(message: types.Message, state: FSMContext):
-    """Начало процесса отправки кода"""
+    """Запуск сценария отправки кода — выбор маркетплейса."""
     logger.debug(f"🔄 Starting send_code flow for user {message.from_user.id}")
-
-    current_state = await state.get_state()
-    if current_state:
-        await state.reset_state() 
+    await state.finish() # Всегда сбрасываем состояние перед началом
 
     markup = InlineKeyboardMarkup(row_width=2)
-    markup.add(
+    markup.row(
         InlineKeyboardButton("📦 OZON", callback_data="store_ozon"),
-        InlineKeyboardButton("📦 Wildberries", callback_data="store_wildberries"),
-        InlineKeyboardButton("◀️ В меню", callback_data="back_to_menu")
+        InlineKeyboardButton("📦 Wildberries", callback_data="store_wildberries")
     )
-    
-    await message.answer(
-        "🛍 <b>Выберите маркетплейс:</b>",
-        reply_markup=markup,
-        parse_mode="HTML"
-    )
-    await CodeStates.CHOOSING_STORE.set()
+    # Кнопка "В меню" - глобальная, обрабатывается в global_handlers
+    # markup.row(InlineKeyboardButton("◀️ В меню", callback_data="back_to_menu")) # Убираем отсюда
 
-    current = await state.get_state()
-    logger.debug(f"State after set: {current}")
+    await message.answer("🛍 <b>Выберите маркетплейс:</b>", reply_markup=markup, parse_mode="HTML")
+    await CodeStates.CHOOSING_STORE.set()
 
 
 async def process_store_choice(query: types.CallbackQuery, state: FSMContext):
-    """Обработка выбора магазина"""
+    """Обработка выбора магазина."""
+    await query.answer() # Всегда отвечаем на callback
+    user_id = query.from_user.id
+    callback_data = query.data
+    logger.debug(f"Callback 'process_store_choice' received: {callback_data} from user {user_id}")
 
-    logger.debug(f"📥 Callback received: data={query.data}, user_id={query.from_user.id}")
+    # Проверяем состояние FSM
     current_state = await state.get_state()
-    logger.debug(f"🔍 Current FSM state: {current_state}")
-
-    if query.data == "back_to_menu":
-        logger.debug("↩️ Handling 'back_to_menu'")
-        await query.answer()
+    if current_state != CodeStates.CHOOSING_STORE.state:
+        logger.warning(f"State mismatch for user {user_id}. Expected {CodeStates.CHOOSING_STORE.state}, got {current_state}")
+        await query.message.edit_text("❌ Ошибка состояния. Попробуйте заново.")
         await state.finish()
+        # Возвращаем главное меню
         await query.message.answer("Выберите действие:", reply_markup=get_main_menu())
         return
-    
-    logger.debug(f"✅ Processing store choice: {query.data}")
 
-    store = query.data
-    await state.update_data(store=store)
-    
-    example_photo = "ozon-ok.jpg" if store == "store_ozon" else "wb.jpg"
-    photo_path = Path("static") / "images" / example_photo
-    
-    caption = (
-        "📸 <b>Отправьте скриншот с кодом выдачи</b>\n\n"
-        "Для OZON: штрих-код (баркод)\n"
-        "Для Wildberries: QR-код\n\n"
-        "<i>Убедитесь, что код хорошо виден на фото</i>"
-    )
-    
-    try:
-        # Асинхронная проверка существования файла
-        if await aios.path.exists(photo_path):
-            # Асинхронное чтение файла
-            async with aiofiles.open(photo_path, "rb") as f:
-                photo_bytes = await f.read()
-            
-            # Отправка фото
-            await bot.send_photo(
-                chat_id=query.from_user.id,
-                photo=photo_bytes,
-                caption=caption,
-                parse_mode="HTML"
-            )
-        else:
-            await query.message.answer(caption, parse_mode="HTML")
-            logger.warning(f"Example photo not found: {photo_path}")
-    except Exception as e:
-        logger.error(f"Error sending example photo: {e}")
-        await query.message.answer(caption, parse_mode="HTML")
-    
-    await CodeStates.RECEIVING_CODE.set()
-    await query.answer()
+    # Обработка выбора магазина
+    if callback_data in ["store_ozon", "store_wildberries"]:
+        store = callback_data
+        await state.update_data(store=store)
+
+        example_photo = "ozon-ok.jpg" if store == "store_ozon" else "wb.jpg"
+        photo_path = Path("static") / "images" / example_photo
+
+        caption = (
+            "📸 <b>Отправьте скриншот с кодом выдачи</b>\n"
+            "Для OZON: штрих-код (баркод)\n"
+            "Для Wildberries: QR-код\n"
+            "<i>Убедитесь, что код хорошо виден на фото</i>"
+        )
+
+        try:
+            if await aios.path.exists(photo_path):
+                async with aiofiles.open(photo_path, "rb") as f:
+                    photo_bytes = await f.read()
+                await bot.send_photo(
+                    chat_id=query.from_user.id,
+                    photo=photo_bytes,
+                    caption=caption,
+                    parse_mode="HTML"
+                )
+                logger.debug(f"Sent example photo: {photo_path}")
+            else:
+                await bot.send_message(chat_id=query.from_user.id, text=caption, parse_mode="HTML")
+                logger.warning(f"Example photo not found: {photo_path}")
+        except Exception as e:
+            logger.error(f"Error sending example photo: {e}")
+            await bot.send_message(chat_id=query.from_user.id, text=caption, parse_mode="HTML")
+
+        await CodeStates.RECEIVING_CODE.set()
+        logger.debug(f"Set state to RECEIVING_CODE for user {user_id}")
+    else:
+        # Неожиданный callback_data в этом состоянии
+        logger.warning(f"Unexpected callback_data '{callback_data}' in CHOOSING_STORE for user {user_id}")
+        await query.message.edit_text("❌ Неожиданная команда. Попробуйте заново.")
+        await state.finish()
+        await query.message.answer("Выберите действие:", reply_markup=get_main_menu())
 
 
 async def back_to_store_choice(query: types.CallbackQuery, state: FSMContext):
-    """Возврат к выбору магазина"""
-    logger.debug("↩️ Callback: back_to_store_choice")
-    await start_send_code(query.message, state)
+    """
+    Возврат к выбору магазина.
+    Эта функция вызывается явно из других хендлеров (например, process_office_choice).
+    """
     await query.answer()
+    logger.debug(f"Handling 'back_to_store_choice' for user {query.from_user.id}")
+    # Удаляем старое сообщение с выбором офиса (если применимо)
+    try:
+        await query.message.delete()
+    except Exception:
+        pass # Игнорируем ошибки при удалении, если сообщение уже удалено
+
+    # Вызываем основную функцию старта, она сама установит состояние
+    await start_send_code(query.message, state)
+
 
 async def process_code_photo(message: types.Message, state: FSMContext):
-    """Обработка фотографии с кодом"""
+    """Обработка фото с кодом."""
     if not message.photo:
         await message.answer("📸 Пожалуйста, отправьте фото с кодом.")
         return
-    
-    # Отправляем уведомление о начале обработки
+
     processing_msg = await message.answer("🔍 Обрабатываю изображение...")
-    
+
     try:
-        photo = message.photo[-1]
+        photo = message.photo[-1] # Берем самое качественное фото
         file = await bot.get_file(photo.file_id)
         file_bytes = await bot.download_file(file.file_path)
-        
+        from src.utils.image_utils import extract_code_from_image
         code = extract_code_from_image(file_bytes.read())
+
         if not code:
             await message.answer(
-                "❌ <b>Не удалось распознать код</b>\n\n"
+                "❌ <b>Не удалось распознать код</b>\n"
                 "Возможные причины:\n"
                 "• Слишком темное/светлое фото\n"
                 "• Код не в фокусе\n"
-                "• Часть кода обрезана\n\n"
+                "• Часть кода обрезана\n"
                 "Попробуйте сделать более четкий скриншот.",
                 parse_mode="HTML"
             )
             return
-        
+
         await state.update_data(code=code)
         await bot.delete_message(message.chat.id, processing_msg.message_id)
-        
+
         await message.answer(
             "✅ <b>Код распознан!</b>\n"
             f"<code>{code}</code>\n\n"
@@ -179,212 +167,139 @@ async def process_code_photo(message: types.Message, state: FSMContext):
             reply_markup=get_office_keyboard()
         )
         await CodeStates.CHOOSING_OFFICE.set()
-        
+        logger.debug(f"Set state to CHOOSING_OFFICE for user {message.from_user.id}")
+
     except Exception as e:
         logger.error(f"Error processing photo: {e}")
-        await message.answer(
-            "❌ Произошла ошибка при обработке фото. Попробуйте еще раз."
-        )
+        await message.answer("❌ Произошла ошибка при обработке фото. Попробуйте еще раз.")
+
 
 async def process_office_choice(query: types.CallbackQuery, state: FSMContext):
-    """Обработка выбора офиса"""
-    if query.data == "back_to_store_choice":
-        await back_to_store_choice(query, state)
-        return
-    elif query.data == "back_to_menu":
-        await query.answer()
+    """Обработка выбора офиса."""
+    await query.answer()
+    user_id = query.from_user.id
+    callback_data = query.data
+    logger.debug(f"Callback 'process_office_choice' received: {callback_data} from user {user_id}")
+
+    # Проверяем состояние FSM
+    current_state = await state.get_state()
+    if current_state != CodeStates.CHOOSING_OFFICE.state:
+        logger.warning(f"State mismatch for user {user_id}. Expected {CodeStates.CHOOSING_OFFICE.state}, got {current_state}")
+        await query.message.edit_text("❌ Ошибка состояния. Попробуйте заново.")
         await state.finish()
+        # Возвращаем главное меню
         await query.message.answer("Выберите действие:", reply_markup=get_main_menu())
         return
-    
-    office_id = query.data.replace("office_", "")
-    await state.update_data(office_id=office_id)
-    
-    async with state.get_data() as data:
+
+    # Обработка кнопки "Назад" - вызываем функцию возврата
+    if callback_data == "back_to_store_choice":
+        logger.debug(f"User {user_id} chose to go back to store selection.")
+        await back_to_store_choice(query, state)
+        return # Важно: выходим, чтобы не выполнять остальную логику
+
+    # Обработка выбора офиса
+    if callback_data.startswith("office_"):
+        office_id = callback_data.replace("office_", "")
+        await state.update_data(office_id=office_id)
+
+        # Удаляем сообщение с выбором офиса
+        try:
+            await query.message.delete()
+        except Exception:
+            pass # Игнорируем ошибки при удалении
+
+        # Получаем данные из FSM
+        data = await state.get_data()
         store = data.get('store')
-        
+
         if store == "store_ozon":
             await query.message.answer(
-                "👤 <b>Введите ваше ФИО:</b>\n\n"
-                "<i>Фамилия Имя Отчество (как в заказе)</i>",
+                "👤 <b>Введите ваше ФИО:</b>\n<i>Фамилия Имя Отчество (как в заказе)</i>",
                 parse_mode="HTML"
             )
             await CodeStates.WAITING_FOR_NAME.set()
+            logger.debug(f"Set state to WAITING_FOR_NAME for user {user_id}")
         elif store == "store_wildberries":
             await query.message.answer(
-                "📱 <b>Введите ваш номер телефона:</b>\n\n"
-                "<i>Формат: +7 XXX XXX-XX-XX или 7XXXXXXXXXX</i>",
+                "📱 <b>Введите ваш номер телефона:</b>\n<i>Формат: +7 XXX XXX-XX-XX</i>",
                 parse_mode="HTML"
             )
             await CodeStates.WAITING_FOR_PHONE.set()
-    
-    await query.answer()
+            logger.debug(f"Set state to WAITING_FOR_PHONE for user {user_id}")
+        else:
+            # На всякий случай, если store не определён
+            logger.error(f"Store not set in FSM for user {user_id}")
+            await query.message.answer("❌ Ошибка данных. Попробуйте снова.")
+            await state.finish()
+    else:
+        # Неожиданный callback_data в этом состоянии (кроме back_to_store_choice)
+        logger.warning(f"Unexpected callback_data '{callback_data}' in CHOOSING_OFFICE for user {user_id}")
+
 
 async def process_name_input(message: types.Message, state: FSMContext):
-    """Обработка ввода ФИО"""
+    """Обработка ввода ФИО (только для OZON)."""
     name = message.text.strip()
     if len(name) < 2 or len(name) > 100:
-        await message.answer(
-            "❌ ФИО должно содержать от 2 до 100 символов.\n"
-            "Пожалуйста, введите корректное ФИО:"
-        )
+        await message.answer("❌ ФИО должно содержать от 2 до 100 символов.\nПожалуйста, введите корректное ФИО:")
         return
-    
     await state.update_data(name=name)
-    
     await message.answer(
-        "📱 <b>Введите ваш номер телефона:</b>\n\n"
-        "<i>Формат: +7 XXX XXX-XX-XX или 7XXXXXXXXXX</i>",
+        "📱 <b>Введите ваш номер телефона:</b>\n<i>Формат: +7 XXX XXX-XX-XX</i>",
         parse_mode="HTML"
     )
     await CodeStates.WAITING_FOR_PHONE.set()
+    logger.debug(f"Set state to WAITING_FOR_PHONE after name input for user {message.from_user.id}")
 
 async def process_phone_input(message: types.Message, state: FSMContext):
-    """Обработка ввода номера телефона"""
-    phone = message.text.strip()
-    
-    # Очистка номера
-    cleaned = ''.join(filter(str.isdigit, phone))
-    
-    # Проверка формата
-    if not cleaned or not cleaned.startswith('7') or len(cleaned) != 11:
-        await message.answer(
-            "❌ <b>Неверный формат номера</b>\n\n"
-            "Номер должен:\n"
-            "• Начинаться с 7\n"
-            "• Содержать 11 цифр\n"
-            "• Быть в формате: +7 XXX XXX-XX-XX\n\n"
-            "Пожалуйста, введите корректный номер:",
-            parse_mode="HTML"
-        )
-        return
-    
-    # Форматирование для отображения
-    formatted_phone = f"+7 ({cleaned[1:4]}) {cleaned[4:7]}-{cleaned[7:9]}-{cleaned[9:11]}"
-    
-    await state.update_data(phone=formatted_phone, cleaned_phone=cleaned)
-    
-    # Получение всех данных
-    async with state.get_data() as data:
-        store = data.get('store')
-        code = data.get('code')
-        name = data.get('name', '')
-        office_id = data.get('office_id')
-        
-        config = ConfigLoader.get_config()
-        
-        # Поиск офиса
-        office_name = office_id
-        for office in config.get("offices", []):
-            if office["id"] == office_id:
-                office_name = office["name"]
-                break
-        
-        # Определение целевого чата
-        target_chat = None
-        marketplace_key = "ozon" if store == "store_ozon" else "wb"
-        
-        if "chats_config" in config and office_id in config["chats_config"]:
-            target_chat = config["chats_config"][office_id].get(marketplace_key)
-        
-        if not target_chat:
-            logger.error(f"Target chat not found for office {office_id}, marketplace {marketplace_key}")
-            await message.answer(
-                "❌ Ошибка конфигурации. Пожалуйста, сообщите администратору."
-            )
-            return
-        
-        # Формирование сообщения
-        if store == "store_ozon":
-            caption = (
-                f"🛍 <b>OZON - НОВЫЙ КОД</b>\n\n"
-                f"👤 <b>ФИО:</b> {name}\n"
-                f"📱 <b>Телефон:</b> {formatted_phone}\n"
-                f"🎫 <b>Код:</b> <code>{code}</code>\n"
-                f"🏢 <b>Офис:</b> {office_name}\n\n"
-                f"👤 <b>Отправитель:</b> @{message.from_user.username or message.from_user.id}"
-            )
-        else:
-            caption = (
-                f"🛍 <b>Wildberries - НОВЫЙ КОД</b>\n\n"
-                f"📱 <b>Телефон:</b> {formatted_phone}\n"
-                f"🎫 <b>Код:</b> <code>{code}</code>\n"
-                f"🏢 <b>Офис:</b> {office_name}\n\n"
-                f"👤 <b>Отправитель:</b> @{message.from_user.username or message.from_user.id}"
-            )
-        
-        try:
-            # Отправка в рабочий чат
-            await bot.send_message(target_chat, caption, parse_mode="HTML")
-            
-            # Подтверждение пользователю
-            await message.answer(
-                "✅ <b>Код успешно отправлен!</b>\n\n"
-                f"🏢 <b>Офис:</b> {office_name}\n"
-                f"📅 <b>Статус:</b> Передано в отдел доставки\n\n"
-                "<i>Ожидайте уведомления о готовности заказа</i>",
-                parse_mode="HTML"
-            )
-            
-        except Exception as e:
-            logger.error(f"Error sending code to chat: {e}")
-            await message.answer(
-                "❌ Произошла ошибка при отправке кода. Попробуйте позже."
-            )
-    
-    await state.finish()
+    """Хендлер для ввода телефона. Вызывает бизнес-логику."""
+    # Проверка, что FSM действительно в нужном состоянии, может быть опциональной,
+    # так как она уже проверяется при регистрации хендлера.
+    await process_final_order_data(message, state)
 
 
-async def handle_unknown_callback(query: types.CallbackQuery):
-    """Обработка неизвестных callback-запросов"""
-    await query.answer("⚠️ Это действие сейчас недоступно. Начните заново.", show_alert=True)
+def register_send_code_handlers(dp):
+    """Регистрация всех хендлеров, связанных с отправкой кода."""
+    logger.debug("Registering send_code handlers...")
 
-
-def register_send_code_handlers(dp: Dispatcher):
-    """Регистрация обработчиков"""
+    # 1. Обработчик запуска сценария
     dp.register_message_handler(
         start_send_code,
         lambda msg: msg.text == "📤 Отправить код",
-        state="*"
+        state="*"  # Может быть вызван из любого состояния
     )
-    
+
+    # 2. Обработчик выбора магазина (только в состоянии CHOOSING_STORE)
     dp.register_callback_query_handler(
         process_store_choice,
-        lambda q: q.data in ["store_ozon", "store_wildberries", "back_to_menu"],
-        # state=[CodeStates.CHOOSING_STORE, None] 
-        state="*"
+        lambda q: q.data in ["store_ozon", "store_wildberries"],
+        state=CodeStates.CHOOSING_STORE
     )
-    
-    dp.register_callback_query_handler(
-        back_to_store_choice,
-        lambda q: q.data == "back_to_store_choice",
-        state="*"
-    )
-    
+
+    # 3. Обработчик фото (только в состоянии RECEIVING_CODE)
     dp.register_message_handler(
         process_code_photo,
-        content_types=types.ContentTypes.PHOTO,
+        content_types=types.ContentType.PHOTO,
         state=CodeStates.RECEIVING_CODE
     )
-    
+
+    # 4. Обработчик выбора офиса (только в состоянии CHOOSING_OFFICE)
+    # Обрабатывает выбор офиса И кнопку "Назад"
     dp.register_callback_query_handler(
         process_office_choice,
-        lambda q: q.data.startswith("office_") or q.data in ["back_to_store_choice", "back_to_menu"],
+        lambda q: q.data.startswith("office_") or q.data == "back_to_store_choice", # Оба случая
         state=CodeStates.CHOOSING_OFFICE
     )
-    
+
+    # 5. Обработчик ввода ФИО (только в состоянии WAITING_FOR_NAME)
     dp.register_message_handler(
         process_name_input,
         state=CodeStates.WAITING_FOR_NAME
     )
-    
+
+    # 6. Обработчик ввода телефона (только в состоянии WAITING_FOR_PHONE)
     dp.register_message_handler(
         process_phone_input,
         state=CodeStates.WAITING_FOR_PHONE
     )
 
-    # Обработчик для всех остальных callback-запросов
-    dp.register_callback_query_handler(
-        handle_unknown_callback,
-        state="*"
-    )
+    logger.debug("Send_code handlers registered.")

@@ -8,3 +8,4 @@ qrcode[pil]>=7.0
 python-dotenv>=0.19
 aiocron>=1.8
 aiofiles==23.2.1
+python-barcode>=0.15.1
