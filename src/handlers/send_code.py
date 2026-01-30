@@ -14,6 +14,8 @@ from src.services.code_processing import process_final_order_data
 import aiofiles
 import aiofiles.os as aios
 
+from src.utils.store_utils import get_readable_store_name
+
 
 logger = logging.getLogger(__name__)
 
@@ -63,7 +65,8 @@ async def start_send_code(message: types.Message, state: FSMContext):
     # markup.row(InlineKeyboardButton("◀️ В меню", callback_data="back_to_menu")) # Убираем отсюда
 
     await message.answer("🛍 <b>Выберите маркетплейс:</b>", reply_markup=markup, parse_mode="HTML")
-    await CodeStates.CHOOSING_STORE.set()
+    # await CodeStates.CHOOSING_STORE.set()
+    await state.set_state(CodeStates.CHOOSING_STORE)
 
 
 async def process_store_choice(query: types.CallbackQuery, state: FSMContext):
@@ -92,10 +95,12 @@ async def process_store_choice(query: types.CallbackQuery, state: FSMContext):
         photo_path = Path("static") / "images" / example_photo
 
         store_description = get_store_description(store)
+        # Получаем читаемое название
+        readable_store_name = get_readable_store_name(store)
 
         caption = (
         f"📸 <b>Отправьте скриншот с кодом выдачи</b>\n"
-        f"Для {store.upper()}: {store_description}\n"
+        f"Для {readable_store_name}: {store_description}\n"
         "<i>Убедитесь, что код хорошо виден на фото</i>"
         )
 
@@ -117,7 +122,9 @@ async def process_store_choice(query: types.CallbackQuery, state: FSMContext):
             logger.error(f"Error sending example photo: {e}")
             await bot.send_message(chat_id=query.from_user.id, text=caption, parse_mode="HTML")
 
-        await CodeStates.RECEIVING_CODE.set()
+        # await CodeStates.RECEIVING_CODE.set()
+        await state.set_state(CodeStates.RECEIVING_CODE)
+
         logger.debug(f"Set state to RECEIVING_CODE for user {user_id}")
     else:
         # Неожиданный callback_data в этом состоянии
@@ -194,14 +201,17 @@ async def process_office_choice(query: types.CallbackQuery, state: FSMContext):
                 "👤 <b>Введите ваше ФИО:</b>\n<i>Фамилия Имя Отчество (как в заказе)</i>",
                 parse_mode="HTML"
             )
-            await CodeStates.WAITING_FOR_NAME.set()
+            # await CodeStates.WAITING_FOR_NAME
+            await state.set_state(CodeStates.WAITING_FOR_NAME)
+            
             logger.debug(f"Set state to WAITING_FOR_NAME for user {user_id}")
         elif store == "store_wildberries":
             await query.message.answer(
                 "📱 <b>Введите ваш номер телефона:</b>\n<i>Формат: +7 XXX XXX-XX-XX</i>",
                 parse_mode="HTML"
             )
-            await CodeStates.WAITING_FOR_PHONE.set()
+            # await CodeStates.WAITING_FOR_PHONE.set()
+            await state.set_state(CodeStates.WAITING_FOR_PHONE)
             logger.debug(f"Set state to WAITING_FOR_PHONE for user {user_id}")
         else:
             # На всякий случай, если store не определён
@@ -224,7 +234,9 @@ async def process_name_input(message: types.Message, state: FSMContext):
         "📱 <b>Введите ваш номер телефона:</b>\n<i>Формат: +7 XXX XXX-XX-XX</i>",
         parse_mode="HTML"
     )
-    await CodeStates.WAITING_FOR_PHONE.set()
+    # await CodeStates.WAITING_FOR_PHONE.set()
+    await state.set_state(CodeStates.WAITING_FOR_PHONE)
+
     logger.debug(f"Set state to WAITING_FOR_PHONE after name input for user {message.from_user.id}")
 
 async def process_phone_input(message: types.Message, state: FSMContext):

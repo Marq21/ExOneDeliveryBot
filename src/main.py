@@ -5,10 +5,18 @@ from src.bot_instance import dp
 from src.handlers.start import register_start_handlers
 from src.handlers.send_code import register_send_code_handlers
 from src.handlers.global_handlers import register_global_callbacks
-from src.handlers.error_handlers import register_error_handlers
+from src.handlers.error_handlers import register_error_handlers # <-- Новый импорт
 
-# Настройка логирования
-logging.basicConfig(level=logging.INFO)
+# Логирование в файл
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler("bot.log"),
+        logging.StreamHandler() # Также вывод в консоль
+    ]
+)
+
 logger = logging.getLogger(__name__)
 
 # Загрузка переменных окружения
