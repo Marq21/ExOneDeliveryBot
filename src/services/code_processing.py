@@ -53,7 +53,7 @@ async def get_order_data_and_config(state: FSMContext) -> dict | None:
     }
 
 
-def prepare_image_and_caption_bytesio(order_data: dict) -> tuple[BytesIO | None, str | None]: # <-- НОВОЕ ИМЯ и возвращаем BytesIO
+def prepare_image_and_caption_bytesio(order_data: dict) -> tuple[BytesIO | None, str | None]:
     """Генерирует изображение (как BytesIO) и текст. Возвращает (image_bytesio, caption_text) или (None, None)."""
     code = order_data["code"]
     store = order_data["store"]
@@ -76,12 +76,13 @@ def prepare_image_and_caption_bytesio(order_data: dict) -> tuple[BytesIO | None,
             )
         else:
             logger.error(f"generate_barcode_image_bytesio returned None for OZON code: {code}") # <-- Лог как было
-    else: # store_wildberries
+    else:
         logger.debug(f"Generating QR code image for WB  {code}")
         image_buffer = generate_qr_code_image_bytesio(code)
         if image_buffer:
             caption_text = (
-                f"Код для получения Wildberries: {code}\n"
+                f"Код для получения Wildberries:\n"
+                f"{code}\n"
                 f"Телефон: {phone}\n\n"
                 f"Пункт: {office_name}"
             )

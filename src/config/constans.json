@@ -113,5 +113,17 @@
     "Ex.One#8": "Ежедневно с 10:00 до 17:00.",
     "Ex.One#9": "Ежедневно с 10:00 до 17:00.",
     "Ex.One#10": "Ежедневно с 10:00 до 17:00."
+  },
+  "code_validation_rules": {
+    "store_ozon": {
+      "description": "штрих-код (баркод)",
+      "regex_pattern": "\\*",
+      "example_image": "ozon-ok.jpg"
+    },
+    "store_wildberries": {
+      "description": "QR-код",
+      "regex_pattern": "_",
+      "example_image": "wb.jpg"
+    }
   }
 }

@@ -3,7 +3,10 @@ from pathlib import Path
 from aiogram import types
 from aiogram.dispatcher import FSMContext
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from src.services.code_photo_processing import process_final_code_photo
 from src.states.code_states import CodeStates
+from src.utils.code_acceptance_schedule import format_working_hours_message, is_code_acceptance_time
+from src.utils.code_validator import get_store_description
 from src.utils.config_loader import ConfigLoader
 from src.bot_instance import bot
 from src.handlers.start import get_main_menu
@@ -34,11 +37,22 @@ def get_office_keyboard() -> InlineKeyboardMarkup:
     )
     return keyboard
 
-
 async def start_send_code(message: types.Message, state: FSMContext):
     """Запуск сценария отправки кода — выбор маркетплейса."""
     logger.debug(f"🔄 Starting send_code flow for user {message.from_user.id}")
     await state.finish() # Всегда сбрасываем состояние перед началом
+
+    # --- Проверка расписания приёма кодов ---
+    if not is_code_acceptance_time():
+        # Форматируем и отправляем подробное расписание
+        schedule_message = format_working_hours_message()
+        await message.answer(
+            f"🕗 <b>К сожалению, приём кодов сейчас закрыт.</b>\n\n"
+            f"{schedule_message}\n\n"
+            f"Пожалуйста, попробуйте позже.",
+            parse_mode="HTML"
+        )
+        return
 
     markup = InlineKeyboardMarkup(row_width=2)
     markup.row(
@@ -54,7 +68,7 @@ async def start_send_code(message: types.Message, state: FSMContext):
 
 async def process_store_choice(query: types.CallbackQuery, state: FSMContext):
     """Обработка выбора магазина."""
-    await query.answer() # Всегда отвечаем на callback
+    await query.answer()
     user_id = query.from_user.id
     callback_data = query.data
     logger.debug(f"Callback 'process_store_choice' received: {callback_data} from user {user_id}")
@@ -77,11 +91,12 @@ async def process_store_choice(query: types.CallbackQuery, state: FSMContext):
         example_photo = "ozon-ok.jpg" if store == "store_ozon" else "wb.jpg"
         photo_path = Path("static") / "images" / example_photo
 
+        store_description = get_store_description(store)
+
         caption = (
-            "📸 <b>Отправьте скриншот с кодом выдачи</b>\n"
-            "Для OZON: штрих-код (баркод)\n"
-            "Для Wildberries: QR-код\n"
-            "<i>Убедитесь, что код хорошо виден на фото</i>"
+        f"📸 <b>Отправьте скриншот с кодом выдачи</b>\n"
+        f"Для {store.upper()}: {store_description}\n"
+        "<i>Убедитесь, что код хорошо виден на фото</i>"
         )
 
         try:
@@ -134,45 +149,7 @@ async def process_code_photo(message: types.Message, state: FSMContext):
     if not message.photo:
         await message.answer("📸 Пожалуйста, отправьте фото с кодом.")
         return
-
-    processing_msg = await message.answer("🔍 Обрабатываю изображение...")
-
-    try:
-        photo = message.photo[-1] # Берем самое качественное фото
-        file = await bot.get_file(photo.file_id)
-        file_bytes = await bot.download_file(file.file_path)
-        from src.utils.image_utils import extract_code_from_image
-        code = extract_code_from_image(file_bytes.read())
-
-        if not code:
-            await message.answer(
-                "❌ <b>Не удалось распознать код</b>\n"
-                "Возможные причины:\n"
-                "• Слишком темное/светлое фото\n"
-                "• Код не в фокусе\n"
-                "• Часть кода обрезана\n"
-                "Попробуйте сделать более четкий скриншот.",
-                parse_mode="HTML"
-            )
-            return
-
-        await state.update_data(code=code)
-        await bot.delete_message(message.chat.id, processing_msg.message_id)
-
-        await message.answer(
-            "✅ <b>Код распознан!</b>\n"
-            f"<code>{code}</code>\n\n"
-            "Теперь выберите офис, где планируете забрать заказ:",
-            parse_mode="HTML",
-            reply_markup=get_office_keyboard()
-        )
-        await CodeStates.CHOOSING_OFFICE.set()
-        logger.debug(f"Set state to CHOOSING_OFFICE for user {message.from_user.id}")
-
-    except Exception as e:
-        logger.error(f"Error processing photo: {e}")
-        await message.answer("❌ Произошла ошибка при обработке фото. Попробуйте еще раз.")
-
+    await process_final_code_photo(message, state)
 
 async def process_office_choice(query: types.CallbackQuery, state: FSMContext):
     """Обработка выбора офиса."""
@@ -255,7 +232,6 @@ async def process_phone_input(message: types.Message, state: FSMContext):
     # Проверка, что FSM действительно в нужном состоянии, может быть опциональной,
     # так как она уже проверяется при регистрации хендлера.
     await process_final_order_data(message, state)
-
 
 def register_send_code_handlers(dp):
     """Регистрация всех хендлеров, связанных с отправкой кода."""

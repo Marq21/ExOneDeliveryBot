@@ -2,30 +2,24 @@ import logging
 from dotenv import load_dotenv
 from aiogram import executor
 from src.bot_instance import dp
-from src.exceptions import SpamDetected
+from src.handlers.start import register_start_handlers
 from src.handlers.send_code import register_send_code_handlers
-from src.handlers.start import register_start_handlers 
-import logging
+from src.handlers.global_handlers import register_global_callbacks
+from src.handlers.error_handlers import register_error_handlers
 
+# Настройка логирования
 logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
+# Загрузка переменных окружения
 load_dotenv()
 
-register_send_code_handlers(dp)
+# Регистрация всех компонентов
+register_error_handlers(dp)      # Сначала ошибки
+register_global_callbacks(dp)   # Потом глобальные хендлеры
+register_send_code_handlers(dp) # Потом специфичные
 register_start_handlers(dp)
 
-logger = logging.getLogger(__name__)
-logger.debug("[DEBUG] 🚀 Все хендлеры зарегистрированы")
-
-
-@dp.errors_handler()
-async def error_handler(update, exception):
-    logger.error(f"Unhandled error: {exception} | Update: {update}")
-    if isinstance(exception, SpamDetected):
-        return True
-    return False
-
-
 if __name__ == '__main__':
-    print("🚀 Бот запущен...")
+    logger.info("🚀 Бот запущен...")
     executor.start_polling(dp, skip_updates=True)

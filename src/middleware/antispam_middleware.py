@@ -1,8 +1,10 @@
+# src/middleware/antispam_middleware.py
 from aiogram.dispatcher.middlewares import BaseMiddleware
 from aiogram import types
 import time
-from src.exceptions import SpamDetected
 import logging
+
+from src.exceptions import SpamDetectedException
 
 logger = logging.getLogger(__name__)
 
@@ -10,27 +12,30 @@ class AntispamMiddleware(BaseMiddleware):
     def __init__(self, cooldown_seconds: int = 2):
         super().__init__()
         self.cooldown = cooldown_seconds
-        self.user_last_action = {}
+        # Используем отдельные словари для сообщений и callback'ов
+        self.last_message_time = {}
+        self.last_callback_time = {}
 
-    async def on_pre_process_message(self, message: types.Message,  data: dict):
-        await self._check_spam(message.from_user.id, message)
-
-    async def on_pre_process_callback_query(self, callback: types.CallbackQuery,  data: dict):
-        await self._check_spam(callback.from_user.id, callback)
-
-    async def _check_spam(self, user_id: int, obj):
+    async def on_pre_process_message(self, message: types.Message,  dict):
+        user_id = message.from_user.id
         now = time.time()
-        last_time = self.user_last_action.get(user_id, 0)
-        logger.debug(f"🛡️ Spam check for user {user_id}, last action: {last_time}, cooldown: {self.cooldown}")
-
+        last_time = self.last_message_time.get(user_id, 0)
+        
         if now - last_time < self.cooldown:
-            logger.warning(f"⚠️ Spam detected from user {user_id}")
-            if isinstance(obj, types.Message):
-                await obj.answer("⏳ Не так быстро! Подождите немного.")
-            elif isinstance(obj, types.CallbackQuery):
-                await obj.answer("⏳ Не так быстро!", show_alert=True)
-            raise SpamDetected()
+            logger.warning(f"⚠️ Spam detected (message) from user {user_id}")
+            await message.answer("⏳ Не так быстро! Подождите немного.")
+            raise SpamDetectedException("Spam blocked")
         else:
-            logger.debug(f"✅ Action allowed for user {user_id}")
+            self.last_message_time[user_id] = now
 
-        self.user_last_action[user_id] = now
+    async def on_pre_process_callback_query(self, callback: types.CallbackQuery,  dict):
+        user_id = callback.from_user.id
+        now = time.time()
+        last_time = self.last_callback_time.get(user_id, 0)
+        
+        if now - last_time < self.cooldown:
+            logger.warning(f"⚠️ Spam detected (callback) from user {user_id}")
+            await callback.answer("⏳ Не так быстро!", show_alert=True)
+            raise SpamDetectedException("Spam blocked")
+        else:
+            self.last_callback_time[user_id] = now

@@ -4,7 +4,7 @@
     "tuesday": 16,
     "wednesday": 10,
     "thursday": 16,
-    "friday": 16,
+    "friday": 24,
     "saturday": 10,
     "sunday": 16
   },
@@ -62,16 +62,16 @@
   ],
   "chats_config": {
     "Ex.One": {
-      "ozon": "702842017",
-      "wb": "702842017"
+      "ozon": "-1003839325497",
+      "wb": "-1003839325497"
     },
     "Ex.Two": {
-      "ozon": "702842017",
-      "wb": "702842017"
+      "ozon": "-1003879590460",
+      "wb": "-1003879590460"
     },
     "Ex.Three": {
-      "ozon": "702842017",
-      "wb": "702842017"
+      "ozon": "-1003769209917",
+      "wb": "-1003769209917"
     },
     "Ex.One#4": {
       "ozon": "702842017",
@@ -113,5 +113,17 @@
     "Ex.One#8": "Ежедневно с 10:00 до 17:00.",
     "Ex.One#9": "Ежедневно с 10:00 до 17:00.",
     "Ex.One#10": "Ежедневно с 10:00 до 17:00."
+  },
+  "code_validation_rules": {
+    "store_ozon": {
+      "description": "штрих-код (баркод)",
+      "regex_pattern": "\\*",
+      "example_image": "ozon-ok.jpg"
+    },
+    "store_wildberries": {
+      "description": "QR-код",
+      "regex_pattern": "_",
+      "example_image": "wb.jpg"
+    }
   }
 }
