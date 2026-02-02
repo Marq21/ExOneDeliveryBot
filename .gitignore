@@ -78,7 +78,7 @@ config.py
 secrets.json
 credentials.json
 constants.dev.json
-src/config/constants.dev.json
+src/config/constants_dev.json
 
 # Временные файлы и кэш
 downloads/
