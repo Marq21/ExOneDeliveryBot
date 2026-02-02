@@ -1,5 +1,3 @@
-# src/utils/store_utils.py
-
 def get_readable_store_name(store_key: str) -> str:
     """
     Преобразует техническое имя магазина в читаемое.

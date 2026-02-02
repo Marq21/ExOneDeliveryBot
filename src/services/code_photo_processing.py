@@ -32,23 +32,27 @@ async def _handle_no_code_detected(message: types.Message, processing_msg: types
         parse_mode="HTML"
     )
 
+
 async def _validate_extracted_code(code: str, state: FSMContext) -> tuple[bool, str, bytes | None]:
     """Валидирует код и возвращает результат, сообщение об ошибке и пример изображения."""
     data = await state.get_data()
     current_store = data.get('store')
 
-    # Определяем, для какого магазина на самом деле предназначен код
+    # ✅ ШАГ 1: Проверяем, подходит ли код под ВЫБРАННЫЙ магазин
+    if is_code_valid_for_store(code, current_store):
+        return True, "", None  # Успех!
+
+    # ❌ ШАГ 2: Код не подходит под выбранный магазин → определяем, откуда он на самом деле
     if is_code_valid_for_store(code, "store_ozon"):
         actual_store_key = "store_ozon"
     elif is_code_valid_for_store(code, "store_wildberries"):
         actual_store_key = "store_wildberries"
     else:
-        # Код не подходит ни под один шаблон
         return False, "❌ Не удалось определить тип кода. Пожалуйста, отправьте чёткий скриншот.", None
 
-    # Получаем читаемые названия
-    selected_store_name = get_readable_store_name(current_store)      # То, что выбрал пользователь
-    actual_store_name = get_readable_store_name(actual_store_key)    # То, откуда код на самом деле
+    # Формируем сообщение
+    selected_store_name = get_readable_store_name(current_store)
+    actual_store_name = get_readable_store_name(actual_store_key)
 
     error_message = (
         f"❌ <b>Ошибка!</b>\n"
@@ -56,7 +60,8 @@ async def _validate_extracted_code(code: str, state: FSMContext) -> tuple[bool, 
         f"Пожалуйста, отправьте правильный код, как на фото выше."
     )
 
-    # Получаем пример изображения
+    # ✅ Пример должен быть для ТОГО МАГАЗИНА, который пользователь ВЫБРАЛ (current_store),
+    # чтобы напомнить, как должен выглядеть правильный код.
     example_image_path = get_example_image_path(current_store)
     example_image = None
     if example_image_path and await aios.path.exists(example_image_path):
@@ -64,6 +69,7 @@ async def _validate_extracted_code(code: str, state: FSMContext) -> tuple[bool, 
             example_image = await f.read()
 
     return False, error_message, example_image
+
 
 async def _handle_invalid_code(
     message: types.Message,
