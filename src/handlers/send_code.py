@@ -13,7 +13,6 @@ from src.handlers.start import get_main_menu
 from src.services.code_processing import process_final_order_data
 import aiofiles
 import aiofiles.os as aios
-
 from src.utils.store_utils import get_readable_store_name
 
 
@@ -149,7 +148,6 @@ async def back_to_store_choice(query: types.CallbackQuery, state: FSMContext):
 
     # Вызываем основную функцию старта, она сама установит состояние
     await start_send_code(query.message, state)
-
 
 async def process_code_photo(message: types.Message, state: FSMContext):
     """Обработка фото с кодом."""

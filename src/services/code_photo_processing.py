@@ -37,18 +37,23 @@ async def _validate_extracted_code(code: str, state: FSMContext) -> tuple[bool, 
     data = await state.get_data()
     current_store = data.get('store')
 
-    if is_code_valid_for_store(code, current_store):
-        return True, "", None
+    # Определяем, для какого магазина на самом деле предназначен код
+    if is_code_valid_for_store(code, "store_ozon"):
+        actual_store_key = "store_ozon"
+    elif is_code_valid_for_store(code, "store_wildberries"):
+        actual_store_key = "store_wildberries"
+    else:
+        # Код не подходит ни под один шаблон
+        return False, "❌ Не удалось определить тип кода. Пожалуйста, отправьте чёткий скриншот.", None
 
-    # Формируем сообщение об ошибке
-    expected_store = "OZON" if current_store == "store_wildberries" else "Wildberries"
-
-    readable_expected_store = get_readable_store_name(expected_store)
+    # Получаем читаемые названия
+    selected_store_name = get_readable_store_name(current_store)      # То, что выбрал пользователь
+    actual_store_name = get_readable_store_name(actual_store_key)    # То, откуда код на самом деле
 
     error_message = (
         f"❌ <b>Ошибка!</b>\n"
-        f"Вы выбрали <b>{readable_expected_store}</b>, но отправили код от <b>{expected_store}</b>.\n"
-        f"Пожалуйста, отправьте правильный код, как на фото выше"
+        f"Вы выбрали <b>{selected_store_name}</b>, но отправили код от <b>{actual_store_name}</b>.\n"
+        f"Пожалуйста, отправьте правильный код, как на фото выше."
     )
 
     # Получаем пример изображения
