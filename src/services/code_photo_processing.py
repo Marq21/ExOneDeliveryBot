@@ -6,7 +6,9 @@ from src.utils.image_utils import extract_code_from_image
 from src.utils.code_validator import is_code_valid_for_store, get_example_image_path
 import aiofiles
 import aiofiles.os as aios
-from pathlib import Path
+
+from src.utils.store_utils import get_readable_store_name
+
 
 logger = logging.getLogger(__name__)
 
@@ -40,9 +42,12 @@ async def _validate_extracted_code(code: str, state: FSMContext) -> tuple[bool, 
 
     # Формируем сообщение об ошибке
     expected_store = "OZON" if current_store == "store_wildberries" else "Wildberries"
+
+    readable_expected_store = get_readable_store_name(expected_store)
+
     error_message = (
         f"❌ <b>Ошибка!</b>\n"
-        f"Вы выбрали <b>{current_store.upper()}</b>, но отправили код от <b>{expected_store}</b>.\n"
+        f"Вы выбрали <b>{readable_expected_store}</b>, но отправили код от <b>{expected_store}</b>.\n"
         f"Пожалуйста, отправьте правильный код, как на фото выше"
     )
 
