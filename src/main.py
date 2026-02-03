@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from dotenv import load_dotenv
 from aiogram import executor
@@ -18,6 +19,8 @@ logging.basicConfig(
     ]
 )
 
+logger = logging.getLogger(__name__)
+
 async def handle_unknown_message(message: types.Message):
     """Обрабатывает все неизвестные текстовые сообщения."""
     await message.answer(
@@ -26,7 +29,12 @@ async def handle_unknown_message(message: types.Message):
         reply_markup=get_main_menu()
     )
 
-logger = logging.getLogger(__name__)
+
+async def heartbeat():
+    while True:
+        logger.info("HEARTBEAT: Bot is alive")
+        await asyncio.sleep(300)  # Каждые 5 минут
+
 
 # Загрузка переменных окружения
 load_dotenv()
@@ -41,4 +49,6 @@ dp.register_message_handler(handle_unknown_message, content_types=types.ContentT
 
 if __name__ == '__main__':
     logger.info("🚀 Бот запущен...")
+    loop = asyncio.get_event_loop()
+    loop.create_task(heartbeat())  # <-- Запуск heartbeat
     executor.start_polling(dp, skip_updates=True)

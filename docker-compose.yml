@@ -3,6 +3,8 @@ services:
     build: .
     env_file:
       - .env
+    environment:
+      - TZ=Europe/Moscow
     restart: unless-stopped
     logging:
       driver: "json-file"
