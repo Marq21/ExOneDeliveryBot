@@ -1,12 +1,12 @@
 {
   "working_hours": {
-    "monday": 16,
-    "tuesday": 16,
-    "wednesday": 10,
-    "thursday": 16,
-    "friday": 16,
-    "saturday": 10,
-    "sunday": 16
+    "monday": 24,
+    "tuesday": 24,
+    "wednesday": 24,
+    "thursday": 24,
+    "friday": 24,
+    "saturday": 24,
+    "sunday": 24
   },
   "offices": [
     {
