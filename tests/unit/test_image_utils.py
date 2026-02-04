@@ -1,4 +1,3 @@
-# tests/unit/test_image_utils.py
 from unittest.mock import mock_open, patch
 import numpy as np
 from src.utils.image_utils import extract_code_from_image

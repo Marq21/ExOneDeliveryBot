@@ -20,21 +20,24 @@ logger = logging.getLogger(__name__)
 
 
 def get_office_keyboard() -> InlineKeyboardMarkup:
-    """Создает клавиатуру выбора офиса с кнопками 'Назад' и 'В меню'. 'Назад' возвращает к выбору магазина."""
+    """Создает клавиатуру выбора офиса с адресом в скобках."""
     keyboard = InlineKeyboardMarkup(row_width=1)
     config = ConfigLoader.get_config()
     for office in config.get("offices", []):
+        # Извлекаем часть адреса до первой запятой
+        full_address = office['address']
+        short_address = full_address.split(',')[0] if ',' in full_address else full_address
+        # Формируем текст кнопки: "📍 Центр (ул. Университетская, 39А)"
+        button_text = f"📍 {office['name']} ({short_address})"
         keyboard.add(
             InlineKeyboardButton(
-                text=f"📍 {office['name']}",
+                text=button_text,
                 callback_data=f"office_{office['id']}"
             )
         )
-    # Кнопка "Назад" возвращает к предыдущему шагу (выбор магазина)
-    # Она будет обработана как специфичный callback в нужном состоянии или как глобальная (но лучше специфично)
     keyboard.row(
-        InlineKeyboardButton("◀️ Назад", callback_data="back_to_store_choice"), # Явный вызов функции вручную
-        InlineKeyboardButton("🏠 В меню", callback_data="back_to_menu")      # Обрабатывается глобально
+        InlineKeyboardButton("◀️ Назад", callback_data="back_to_store_choice"),
+        InlineKeyboardButton("🏠 В меню", callback_data="back_to_menu")
     )
     return keyboard
 
@@ -64,7 +67,6 @@ async def start_send_code(message: types.Message, state: FSMContext):
     # markup.row(InlineKeyboardButton("◀️ В меню", callback_data="back_to_menu")) # Убираем отсюда
 
     await message.answer("🛍 <b>Выберите маркетплейс:</b>", reply_markup=markup, parse_mode="HTML")
-    # await CodeStates.CHOOSING_STORE.set()
     await state.set_state(CodeStates.CHOOSING_STORE)
 
 
@@ -120,8 +122,6 @@ async def process_store_choice(query: types.CallbackQuery, state: FSMContext):
         except Exception as e:
             logger.error(f"Error sending example photo: {e}")
             await bot.send_message(chat_id=query.from_user.id, text=caption, parse_mode="HTML")
-
-        # await CodeStates.RECEIVING_CODE.set()
         await state.set_state(CodeStates.RECEIVING_CODE)
 
         logger.debug(f"Set state to RECEIVING_CODE for user {user_id}")
@@ -196,10 +196,9 @@ async def process_office_choice(query: types.CallbackQuery, state: FSMContext):
 
         if store == "store_ozon":
             await query.message.answer(
-                "👤 <b>Введите ваше ФИО:</b>\n<i>Фамилия Имя Отчество (как в заказе)</i>",
+                "👤 <b>Введите ваше ФИО:</b>\n<i>Фамилия Имя Отчество</i>",
                 parse_mode="HTML"
             )
-            # await CodeStates.WAITING_FOR_NAME
             await state.set_state(CodeStates.WAITING_FOR_NAME)
             
             logger.debug(f"Set state to WAITING_FOR_NAME for user {user_id}")
@@ -208,7 +207,6 @@ async def process_office_choice(query: types.CallbackQuery, state: FSMContext):
                 "📱 <b>Введите ваш номер телефона:</b>\n<i>Формат: +7 XXX XXX-XX-XX</i>",
                 parse_mode="HTML"
             )
-            # await CodeStates.WAITING_FOR_PHONE.set()
             await state.set_state(CodeStates.WAITING_FOR_PHONE)
             logger.debug(f"Set state to WAITING_FOR_PHONE for user {user_id}")
         else:
@@ -232,7 +230,6 @@ async def process_name_input(message: types.Message, state: FSMContext):
         "📱 <b>Введите ваш номер телефона:</b>\n<i>Формат: +7 XXX XXX-XX-XX</i>",
         parse_mode="HTML"
     )
-    # await CodeStates.WAITING_FOR_PHONE.set()
     await state.set_state(CodeStates.WAITING_FOR_PHONE)
 
     logger.debug(f"Set state to WAITING_FOR_PHONE after name input for user {message.from_user.id}")
