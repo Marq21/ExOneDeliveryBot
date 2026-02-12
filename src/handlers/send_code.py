@@ -61,7 +61,7 @@ async def start_send_code(message: types.Message, state: FSMContext):
     markup = InlineKeyboardMarkup(row_width=2)
     markup.row(
         InlineKeyboardButton("📦 OZON", callback_data="store_ozon"),
-        InlineKeyboardButton("📦 Wildberries", callback_data="store_wildberries")
+        # InlineKeyboardButton("📦 Wildberries", callback_data="store_wildberries")
     )
     # Кнопка "В меню" - глобальная, обрабатывается в global_handlers
     # markup.row(InlineKeyboardButton("◀️ В меню", callback_data="back_to_menu")) # Убираем отсюда
