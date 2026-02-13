@@ -86,7 +86,7 @@ async def _handle_invalid_code(
 
 async def _handle_valid_code(message: types.Message, processing_msg: types.Message, state: FSMContext, code: str):
     """Обрабатывает успешно распознанный и валидный код."""
-    from src.handlers.send_code import get_office_keyboard # <-- Импортируем здесь, чтобы избежать циклического импорта
+    from src.utils.keyboard_utils import get_office_keyboard# Импортируем здесь, чтобы избежать циклического импорта
     from src.states.code_states import CodeStates
 
     await state.update_data(code=code)

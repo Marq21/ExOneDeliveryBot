@@ -7,4 +7,4 @@ bot = Bot(token=settings.BOT_TOKEN)
 storage = MemoryStorage()
 dp = Dispatcher(bot, storage=storage)
 
-dp.middleware.setup(AntispamMiddleware(cooldown_seconds=2))
+dp.middleware.setup(AntispamMiddleware(cooldown_seconds=0.5))

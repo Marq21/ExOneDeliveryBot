@@ -4,7 +4,7 @@
     "tuesday": 16,
     "wednesday": 10,
     "thursday": 16,
-    "friday": 16,
+    "friday": 24,
     "saturday": 10,
     "sunday": 16
   },
@@ -60,46 +60,68 @@
       "address": "улица Правды 1"
     }
   ],
+  "ozon_pvzs": [
+    {
+      "id": "trolleibusnaya",
+      "name": "Троллейбусная 24/2В",
+      "address": "ул. Троллейбусная, 24/2В"
+    },
+    {
+      "id": "rostselmash",
+      "name": "50-летия Ростсельмаша 1/52",
+      "address": "ул. 50-летия Ростсельмаша, 1/52"
+    }
+  ],
   "chats_config": {
     "Ex.One": {
-      "ozon": "-1003839325497",
-      "wb": "-1003839325497"
+      "ozon_trolleibusnaya": "-1003742762608",
+      "ozon_rostselmash": "-1003839325497",
+      "wb": "-1003769741670"
     },
     "Ex.Two": {
-      "ozon": "-1003879590460",
-      "wb": "-1003879590460"
+      "ozon_trolleibusnaya": "-1003845786054",
+      "ozon_rostselmash": "-1003879590460",
+      "wb": "-1003733125913"
     },
     "Ex.Three": {
-      "ozon": "-1003769209917",
-      "wb": "-1003769209917"
+      "ozon_trolleibusnaya": "-1003738809721",
+      "ozon_rostselmash": "-1003769209917",
+      "wb": "-1003868548704"
     },
     "Ex.One#4": {
-      "ozon": "-1003794330951",
-      "wb": "-1003794330951"
+      "ozon_trolleibusnaya": "-1003742370685",
+      "ozon_rostselmash": "-1003794330951",
+      "wb": "-1003786898765"
     },
     "Ex.One#5": {
-        "ozon": "-1003753613687",
-        "wb": "-1003753613687"
+      "ozon_trolleibusnaya": "-1003787951519",
+      "ozon_rostselmash": "-1003753613687",
+      "wb": "-1003716905669"
     },
     "Ex.One#6": {
-        "ozon": "-1003796140285",
-        "wb": "-1003796140285"
+      "ozon_trolleibusnaya": "-1003799449149",
+      "ozon_rostselmash": "-1003796140285",
+      "wb": "-1003719069075"
     },
     "Ex.One#7": {
-        "ozon": "-1003747521904",
-        "wb": "-1003747521904"
+      "ozon_trolleibusnaya": "-1003795101237",
+      "ozon_rostselmash": "-1003747521904",
+      "wb": "-1003780594305"
     },
     "Ex.One#8": {
-        "ozon": "-1003866458818",
-        "wb": "-1003866458818"
+      "ozon_trolleibusnaya": "-1003759552228",
+      "ozon_rostselmash": "-1003866458818",
+      "wb": "-1003746299900"
     },
     "Ex.One#9": {
-        "ozon": "-1003752637382",
-        "wb": "-1003752637382"
+      "ozon_trolleibusnaya": "-1003793499691",
+      "ozon_rostselmash": "-1003752637382",
+      "wb": "-1003799563063"
     },
     "Ex.One#10": {
-        "ozon": "-1003661618568",
-        "wb": "-1003661618568"
+      "ozon_trolleibusnaya": "-1003785928978",
+      "ozon_rostselmash": "-1003661618568",
+      "wb": "-1003550920004"
     }
   },
   "office_schedules": {

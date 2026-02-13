@@ -20,12 +20,12 @@ def validate_phone(phone_text: str) -> tuple[bool, str | None]:
     return True, formatted_phone
 
 async def get_order_data_and_config(state: FSMContext) -> dict | None:
-    """Получает данные заказа и конфигурацию. Возвращает словарь с данными или None при ошибке."""
     data = await state.get_data()
     store = data.get("store")
     code = data.get("code")
     name = data.get("name", "")
     office_id = data.get("office_id")
+    ozon_pvz_id = data.get("ozon_pvz_id")
 
     if not all([store, code, office_id]):
         logger.error("Missing required order data in FSM.")
@@ -37,11 +37,23 @@ async def get_order_data_and_config(state: FSMContext) -> dict | None:
 
     config = ConfigLoader.get_config()
     office_name = next((o["name"] for o in config["offices"] if o["id"] == office_id), office_id)
-    marketplace_key = "ozon" if store == "store_ozon" else "wb"
-    target_chat = config["chats_config"].get(office_id, {}).get(marketplace_key)
+
+    target_chat = None
+    if store == "store_ozon":
+        # Используем специфичные ключи для OZON по ПВЗ
+        if ozon_pvz_id == "trolleibusnaya":
+            chat_key = "ozon_trolleibusnaya"
+        elif ozon_pvz_id == "rostselmash":
+            chat_key = "ozon_rostselmash"
+        else:
+            logger.error(f"Unknown OZON PVZ ID: {ozon_pvz_id}")
+            return None
+        target_chat = config["chats_config"].get(office_id, {}).get(chat_key)
+    else:  # store_wildberries
+        target_chat = config["chats_config"].get(office_id, {}).get("wb")
 
     if not target_chat:
-        logger.error(f"Target chat not found for office {office_id}, marketplace {marketplace_key}")
+        logger.error(f"Target chat not found for office={office_id}, store={store}, pvz={ozon_pvz_id}")
         return None
 
     return {
@@ -50,6 +62,7 @@ async def get_order_data_and_config(state: FSMContext) -> dict | None:
         "name": name,
         "office_name": office_name,
         "target_chat": target_chat,
+        "ozon_pvz_id": ozon_pvz_id  # для логов
     }
 
 

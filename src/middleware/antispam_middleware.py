@@ -1,4 +1,3 @@
-# src/middleware/antispam_middleware.py
 from aiogram.dispatcher.middlewares import BaseMiddleware
 from aiogram import types
 import time
