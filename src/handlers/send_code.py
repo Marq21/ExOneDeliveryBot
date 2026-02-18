@@ -1,12 +1,12 @@
 import logging
+import time
 from pathlib import Path
 from aiogram import types
 from aiogram.dispatcher import FSMContext
 from src.services.code_photo_processing import process_final_code_photo
 from src.states.code_states import CodeStates
-from src.utils.code_acceptance_schedule import format_working_hours_message, is_code_acceptance_time
+from src.utils.code_acceptance_schedule import format_working_hours_message, is_session_allowed_to_proceed
 from src.utils.code_validator import get_store_description
-from src.utils.config_loader import ConfigLoader
 from src.bot_instance import bot
 from src.handlers.start import get_main_menu
 from src.services.code_processing import process_final_order_data
@@ -28,7 +28,7 @@ async def start_send_code(message: types.Message, state: FSMContext):
     await state.finish()  # Всегда сбрасываем состояние перед началом
 
     # --- Проверка расписания приёма кодов ---
-    if not is_code_acceptance_time():
+    if not is_session_allowed_to_proceed():
         # Форматируем и отправляем подробное расписание
         schedule_message = format_working_hours_message()
         await message.answer(
@@ -39,6 +39,7 @@ async def start_send_code(message: types.Message, state: FSMContext):
         )
         return
 
+    await state.update_data(session_start_timestamp=int(time.time()))
     markup = get_store_selection_keyboard()
 
     await message.answer("🛍 <b>Выберите маркетплейс:</b>", reply_markup=markup, parse_mode="HTML")
@@ -279,8 +280,12 @@ async def process_name_input(message: types.Message, state: FSMContext):
 
 async def process_phone_input(message: types.Message, state: FSMContext):
     """Хендлер для ввода телефона. Вызывает бизнес-логику."""
-    # Проверка, что FSM действительно в нужном состоянии, может быть опциональной,
-    # так как она уже проверяется при регистрации хендлера.
+    data = await state.get_data()
+    session_start = data.get("session_start_timestamp")
+    if not is_session_allowed_to_proceed(session_start):
+        await message.answer("🕗 Время на завершение заказа истекло.")
+        await state.finish()
+        return
     await process_final_order_data(message, state)
 
 

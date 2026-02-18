@@ -1,17 +1,29 @@
-from unittest.mock import patch
 from datetime import datetime
-from src.utils.code_acceptance_schedule import is_code_acceptance_time
+import pytz
+from freezegun import freeze_time
+from src.utils.code_acceptance_schedule import is_session_allowed_to_proceed
 
-def test_code_acceptance_allowed():
-    # Мокаем текущее время на понедельник 10:00
-    with patch('src.utils.code_acceptance_schedule.datetime') as mock_dt:
-        mock_dt.now.return_value = datetime(2024, 1, 1, 10, 0)  # Понедельник
-        mock_dt.side_effect = lambda *args, **kw: datetime(*args, **kw)
-        assert is_code_acceptance_time() == True
+def _mock_config(monkeypatch, working_hours):
+    # ОЧИЩАЕМ КЭШ ConfigLoader
+    from src.utils.config_loader import ConfigLoader
+    ConfigLoader._cache = {}
+    ConfigLoader._last_load = datetime.min
 
-def test_code_acceptance_blocked():
-    # Мокаем текущее время на среду 11:00 (приём до 10:00)
-    with patch('src.utils.code_acceptance_schedule.datetime') as mock_dt:
-        mock_dt.now.return_value = datetime(2024, 1, 3, 11, 0)  # Среда
-        mock_dt.side_effect = lambda *args, **kw: datetime(*args, **kw)
-        assert is_code_acceptance_time() == False
+    monkeypatch.setattr("src.utils.config_loader.ConfigLoader.get_config", lambda: {
+        "working_hours": working_hours,
+        "offices": [],
+        "ozon_pvzs": [],
+        "chats_config": {},
+        "office_schedules": {},
+        "code_validation_rules": {},
+        "admin_error_chat_id": "123"
+    })
+
+
+def test_grace_period_logic_with_mock_config(monkeypatch):
+    _mock_config(monkeypatch, {"monday": 16})
+    MOSCOW_TZ = pytz.timezone('Europe/Moscow')
+
+    late_start = int(MOSCOW_TZ.localize(datetime(2024, 1, 1, 16, 5)).timestamp())
+    with freeze_time("2024-01-01 16:10:00", tz_offset=3):
+        assert is_session_allowed_to_proceed(late_start) is False
