@@ -42,8 +42,8 @@ load_dotenv()
 # Регистрация всех компонентов
 register_error_handlers(dp)      # Сначала ошибки
 register_global_callbacks(dp)   # Потом глобальные хендлеры
-register_send_code_handlers(dp) # Потом специфичные
 register_start_handlers(dp)
+register_send_code_handlers(dp) # Потом специфичные
 dp.register_message_handler(handle_unknown_message, content_types=types.ContentTypes.TEXT)
 
 

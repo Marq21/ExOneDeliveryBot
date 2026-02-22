@@ -8,12 +8,12 @@ from src.states.code_states import CodeStates
 from src.utils.code_acceptance_schedule import format_working_hours_message, is_session_allowed_to_proceed
 from src.utils.code_validator import get_store_description
 from src.bot_instance import bot
-from src.handlers.start import get_main_menu
 from src.services.code_processing import process_final_order_data
 import aiofiles
 import aiofiles.os as aios
 from src.utils.store_utils import get_readable_store_name
 from src.utils.keyboard_utils import (
+    get_main_menu,
     get_store_selection_keyboard,
     get_ozon_pvz_keyboard,
 )

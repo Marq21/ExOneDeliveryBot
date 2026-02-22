@@ -1,8 +1,8 @@
 import logging
 from aiogram import types
 from aiogram.dispatcher import FSMContext
-from src.bot_instance import bot
-from src.handlers.start import get_main_menu
+
+from src.utils.keyboard_utils import get_main_menu
 
 
 logger = logging.getLogger(__name__)
@@ -43,7 +43,7 @@ def register_global_callbacks(dp):
     dp.register_callback_query_handler(
         global_back_to_menu_handler,
         lambda q: q.data == "back_to_menu",
-        state="*" # state="*" позволяет обрабатывать в любом состоянии FSM
+        state="*"
     )
 
     logger.debug("Global callback handlers registered.")
