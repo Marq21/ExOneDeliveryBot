@@ -1,22 +1,25 @@
 from aiogram import types
 from aiogram.dispatcher import Dispatcher, FSMContext
 from src.utils.keyboard_utils import get_main_menu
+import logging
 
+logger = logging.getLogger(__name__)
 
 async def cmd_start(message: types.Message, state: FSMContext):
     """Обработчик команды /start — полный перезапуск."""
-    await state.finish()
+    user_id = message.from_user.id
+    
+    # Проверяем и сбрасываем активное состояние FSM
+    current_state = await state.get_state()
+    if current_state:
+        logger.info(f"🔄 /start command reset FSM state '{current_state}' for user {user_id}")
+        await state.finish()
+    else:
+        logger.debug(f"📍 /start command called by user {user_id} (no active state)")
+    
+    # Отправляем приветственное сообщение с главным меню
     await message.answer(
-        "Привет! Я бот для работы с кодами выдачи заказов.\n"
-        "Выберите действие:",
-        reply_markup=get_main_menu()
-    )
-
-async def cmd_restart(message: types.Message, state: FSMContext):
-    """Обработчик кнопки 'Перезапустить бота' — сбрасывает всё и показывает стартовое сообщение."""
-    await state.finish()
-    await message.answer(
-        "Бот перезапущен.\n"
+        "👋 Привет! Я бот для работы с кодами выдачи заказов.\n"
         "Выберите действие:",
         reply_markup=get_main_menu()
     )
@@ -43,10 +46,14 @@ async def cmd_restart(message: types.Message, state: FSMContext):
 
 def register_start_handlers(dp: Dispatcher):
     """Регистрация всех хендлеров из этого модуля."""
-    dp.register_message_handler(cmd_start, commands=["start"])
+    dp.register_message_handler(
+        cmd_start,
+        commands=["start"],
+        state="*"
+    )
 
     dp.register_message_handler(
-        cmd_restart,
+        cmd_start,
         lambda msg: msg.text == "🔄 Перезапустить бота",
         state="*"
     )
