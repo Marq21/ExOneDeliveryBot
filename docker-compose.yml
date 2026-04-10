@@ -5,6 +5,7 @@ services:
       - .env
     environment:
       - TZ=Europe/Moscow
+    network_mode: host
     restart: unless-stopped
     logging:
       driver: "json-file"
