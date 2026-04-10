@@ -8,12 +8,12 @@ services:
     dns:
       - 8.8.8.8
       - 1.1.1.1
-      - 77.88.8.8
+      - 77.88.8.8      # Yandex DNS для РФ
     extra_hosts:
-      - "api.telegram.org:149.154.166.110"  # Явный IP
-      - "api.telegram.org:149.154.167.220"  # Резервный IP
-    sysctls:
-      - net.ipv4.ip_forward=1
+      # Альтернативные IP Telegram API (попробуйте разные)
+      - "api.telegram.org:149.154.167.220"
+      - "api.telegram.org:149.154.167.240"
+      - "api.telegram.org:91.108.4.10"
     restart: unless-stopped
     logging:
       driver: "json-file"
