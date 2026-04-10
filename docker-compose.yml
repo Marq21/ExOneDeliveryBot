@@ -5,7 +5,12 @@ services:
       - .env
     environment:
       - TZ=Europe/Moscow
-    network_mode: host
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
+    # === КЛЮЧЕВОЕ: переопределяем DNS для Telegram API ===
+    extra_hosts:
+      - "api.telegram.org:149.154.167.220"
     restart: unless-stopped
     logging:
       driver: "json-file"
