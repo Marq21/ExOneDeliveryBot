@@ -2,7 +2,7 @@ import pytest
 from aiogram.types import InlineKeyboardButton
 from src.utils.keyboard_utils import (
     get_store_selection_keyboard,
-    get_ozon_pvz_keyboard,
+    # get_ozon_pvz_keyboard,
     get_office_keyboard,
     get_back_to_menu_inline
 )
@@ -30,14 +30,14 @@ def test_get_office_keyboard():
     assert actual_buttons == expected_offices
 
 
-def test_get_ozon_pvz_keyboard():
-    """Тест: клавиатура ПВЗ OZON содержит ожидаемые пункты."""
-    kb = get_ozon_pvz_keyboard()
-    buttons = [btn.text for row in kb.inline_keyboard for btn in row if btn.callback_data.startswith("ozon_pvz_")]
+# def test_get_ozon_pvz_keyboard():
+#     """Тест: клавиатура ПВЗ OZON содержит ожидаемые пункты."""
+#     kb = get_ozon_pvz_keyboard()
+#     buttons = [btn.text for row in kb.inline_keyboard for btn in row if btn.callback_data.startswith("ozon_pvz_")]
 
-    # Ожидаем, что в dev-конфиге есть два ПВЗ
-    expected_pvzs = {"Троллейбусная 24/2В", "50-летия Ростсельмаша 1/52"}
-    assert set(buttons) == expected_pvzs
+#     # Ожидаем, что в dev-конфиге есть два ПВЗ
+#     expected_pvzs = {"Троллейбусная 24/2В", "50-летия Ростсельмаша 1/52"}
+#     assert set(buttons) == expected_pvzs
 
 
 def test_get_back_to_menu_inline():

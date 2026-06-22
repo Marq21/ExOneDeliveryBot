@@ -173,3 +173,6 @@ images/*
 !images/ozon.png
 !images/wb.jpg
 !images/README.md
+
+collect.py
+codebase_export.txt

@@ -32,29 +32,29 @@ def get_store_selection_keyboard() -> aiogram.types.InlineKeyboardMarkup:
     return markup
 
 
-def get_ozon_pvz_keyboard() -> aiogram.types.InlineKeyboardMarkup:
-    """
-    Клавиатура выбора пункта выдачи OZON (ПВЗ).
-    Использует данные из конфига: ozon_pvzs.
-    """
-    keyboard = aiogram.types.InlineKeyboardMarkup(row_width=1)
-    config = ConfigLoader.get_config()
-    pvzs = config.get("ozon_pvzs", [])
+# def get_ozon_pvz_keyboard() -> aiogram.types.InlineKeyboardMarkup:
+#     """
+#     Клавиатура выбора пункта выдачи OZON (ПВЗ).
+#     Использует данные из конфига: ozon_pvzs.
+#     """
+#     keyboard = aiogram.types.InlineKeyboardMarkup(row_width=1)
+#     config = ConfigLoader.get_config()
+#     pvzs = config.get("ozon_pvzs", [])
 
-    if not pvzs:
-        # Fallback на случай, если в конфиге нет ПВЗ
-        keyboard.add(aiogram.types.InlineKeyboardButton(
-            "Троллейбусная 24/2В", callback_data="ozon_pvz_trolleibusnaya"))
-        keyboard.add(aiogram.types.InlineKeyboardButton(
-            "ул. 50-летия Ростсельмаша 1/52", callback_data="ozon_pvz_rostselmash"))
-    else:
-        for pvz in pvzs:
-            keyboard.add(
-                aiogram.types.InlineKeyboardButton(
-                    text=pvz["name"],
-                    callback_data=f"ozon_pvz_{pvz['id']}"
-                )
-            )
+#     if not pvzs:
+#         # Fallback на случай, если в конфиге нет ПВЗ
+#         keyboard.add(aiogram.types.InlineKeyboardButton(
+#             "Троллейбусная 24/2В", callback_data="ozon_pvz_trolleibusnaya"))
+#         keyboard.add(aiogram.types.InlineKeyboardButton(
+#             "ул. 50-летия Ростсельмаша 1/52", callback_data="ozon_pvz_rostselmash"))
+#     else:
+#         for pvz in pvzs:
+#             keyboard.add(
+#                 aiogram.types.InlineKeyboardButton(
+#                     text=pvz["name"],
+#                     callback_data=f"ozon_pvz_{pvz['id']}"
+#                 )
+#             )
 
     keyboard.row(
         aiogram.types.InlineKeyboardButton(

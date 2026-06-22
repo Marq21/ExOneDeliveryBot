@@ -15,7 +15,7 @@ from src.utils.store_utils import get_readable_store_name
 from src.utils.keyboard_utils import (
     get_main_menu,
     get_store_selection_keyboard,
-    get_ozon_pvz_keyboard,
+    # get_ozon_pvz_keyboard,
 )
 
 
@@ -54,27 +54,49 @@ async def process_store_choice(query: types.CallbackQuery, state: FSMContext):
     logger.debug(
         f"Callback 'process_store_choice' received: {callback_data} from user {user_id}")
 
-    # Проверяем состояние FSM
     current_state = await state.get_state()
     if current_state != CodeStates.CHOOSING_STORE.state:
         logger.warning(
             f"State mismatch for user {user_id}. Expected {CodeStates.CHOOSING_STORE.state}, got {current_state}")
         await query.message.edit_text("❌ Ошибка состояния. Попробуйте заново.")
         await state.finish()
-        # Возвращаем главное меню
         await query.message.answer("Выберите действие:", reply_markup=get_main_menu())
         return
 
-    # Обработка выбора магазина
     if callback_data == "store_ozon":
         await state.update_data(store="store_ozon")
-        await state.set_state(CodeStates.CHOOSING_OZON_PVZ)
-        await query.message.answer(
-            "📍 <b>Выберите пункт выдачи OZON:</b>",
-            reply_markup=get_ozon_pvz_keyboard(),
-            parse_mode="HTML"
+        # ⚠️ ВРЕМЕННО: ПВЗ "50-летия Ростсельмаша" не работает, используем только "Троллейбусная"
+        await state.update_data(ozon_pvz_id="trolleibusnaya")
+
+        example_photo = "ozon-ok.jpg"
+        photo_path = Path("static") / "images" / example_photo
+        store_description = get_store_description("store_ozon")
+        readable_store_name = get_readable_store_name("store_ozon")
+        caption = (
+            f"📸 <b>Отправьте скриншот с кодом выдачи</b>\n"
+            f"Для {readable_store_name}: {store_description}\n"
+            "<i>Убедитесь, что код хорошо виден на фото</i>"
         )
-        logger.debug(f"Set state to CHOOSING_OZON_PVZ for user {user_id}")
+        try:
+            if await aios.path.exists(photo_path):
+                async with aiofiles.open(photo_path, "rb") as f:
+                    photo_bytes = await f.read()
+                await bot.send_photo(
+                    chat_id=query.from_user.id,
+                    photo=photo_bytes,
+                    caption=caption,
+                    parse_mode="HTML"
+                )
+                logger.debug(f"Sent example photo: {photo_path}")
+            else:
+                await bot.send_message(chat_id=query.from_user.id, text=caption, parse_mode="HTML")
+                logger.warning(f"Example photo not found: {photo_path}")
+        except Exception as e:
+            logger.error(f"Error sending example photo: {e}")
+            await bot.send_message(chat_id=query.from_user.id, text=caption, parse_mode="HTML")
+
+        await state.set_state(CodeStates.RECEIVING_CODE)
+        logger.debug(f"Set state to RECEIVING_CODE for user {user_id} (OZON, PVZ=trolleibusnaya)")
 
     elif callback_data == "store_wildberries":
         await state.update_data(store="store_wildberries")
@@ -103,7 +125,7 @@ async def process_store_choice(query: types.CallbackQuery, state: FSMContext):
                 await bot.send_message(chat_id=query.from_user.id, text=caption, parse_mode="HTML")
                 logger.warning(f"Example photo not found: {photo_path}")
         except Exception as e:
-            logger.error(f"Error sending example photo: {e}")
+            logger.exception(f"Error sending example photo: {e}")
             await bot.send_message(chat_id=query.from_user.id, text=caption, parse_mode="HTML")
         await state.set_state(CodeStates.RECEIVING_CODE)
 
@@ -117,56 +139,56 @@ async def process_store_choice(query: types.CallbackQuery, state: FSMContext):
         await query.message.answer("Выберите действие:", reply_markup=get_main_menu())
 
 
-async def process_ozon_pvz_choice(query: types.CallbackQuery, state: FSMContext):
-    """Обработка выбора ПВЗ OZON."""
-    await query.answer()
-    user_id = query.from_user.id
-    pvz_id = query.data.replace("ozon_pvz_", "")
-    logger.debug(f"User {user_id} selected OZON PVZ: {pvz_id}")
+# async def process_ozon_pvz_choice(query: types.CallbackQuery, state: FSMContext):
+#     """Обработка выбора ПВЗ OZON."""
+#     await query.answer()
+#     user_id = query.from_user.id
+#     pvz_id = query.data.replace("ozon_pvz_", "")
+#     logger.debug(f"User {user_id} selected OZON PVZ: {pvz_id}")
 
-    # Сохраняем выбранный ПВЗ
-    await state.update_data(ozon_pvz_id=pvz_id)
+#     # Сохраняем выбранный ПВЗ
+#     await state.update_data(ozon_pvz_id=pvz_id)
 
-    # Получаем описание и пример
-    example_photo = "ozon-ok.jpg"
-    photo_path = Path("static") / "images" / example_photo
-    store_description = get_store_description("store_ozon")
-    readable_store_name = get_readable_store_name("store_ozon")
-    caption = (
-        f"📸 <b>Отправьте скриншот с кодом выдачи</b>\n"
-        f"Для {readable_store_name}: {store_description}\n"
-        "<i>Убедитесь, что код хорошо виден на фото</i>"
-    )
+#     # Получаем описание и пример
+#     example_photo = "ozon-ok.jpg"
+#     photo_path = Path("static") / "images" / example_photo
+#     store_description = get_store_description("store_ozon")
+#     readable_store_name = get_readable_store_name("store_ozon")
+#     caption = (
+#         f"📸 <b>Отправьте скриншот с кодом выдачи</b>\n"
+#         f"Для {readable_store_name}: {store_description}\n"
+#         "<i>Убедитесь, что код хорошо виден на фото</i>"
+#     )
 
-    try:
-        if await aios.path.exists(photo_path):
-            async with aiofiles.open(photo_path, "rb") as f:
-                photo_bytes = await f.read()
-            await bot.send_photo(
-                chat_id=query.from_user.id,
-                photo=photo_bytes,
-                caption=caption,
-                parse_mode="HTML"
-            )
-        else:
-            await bot.send_message(chat_id=query.from_user.id, text=caption, parse_mode="HTML")
-    except Exception as e:
-        logger.error(
-            f"Error sending OZON example photo after PVZ selection: {e}")
-        await bot.send_message(chat_id=query.from_user.id, text=caption, parse_mode="HTML")
+#     try:
+#         if await aios.path.exists(photo_path):
+#             async with aiofiles.open(photo_path, "rb") as f:
+#                 photo_bytes = await f.read()
+#             await bot.send_photo(
+#                 chat_id=query.from_user.id,
+#                 photo=photo_bytes,
+#                 caption=caption,
+#                 parse_mode="HTML"
+#             )
+#         else:
+#             await bot.send_message(chat_id=query.from_user.id, text=caption, parse_mode="HTML")
+#     except Exception as e:
+#         logger.error(
+#             f"Error sending OZON example photo after PVZ selection: {e}")
+#         await bot.send_message(chat_id=query.from_user.id, text=caption, parse_mode="HTML")
 
-    await state.set_state(CodeStates.RECEIVING_CODE)
-    logger.debug(
-        f"Set state to RECEIVING_CODE after PVZ selection for user {user_id}")
+#     await state.set_state(CodeStates.RECEIVING_CODE)
+#     logger.debug(
+#         f"Set state to RECEIVING_CODE after PVZ selection for user {user_id}")
 
 
-async def back_to_store_from_pvz(query: types.CallbackQuery, state: FSMContext):
-    """Возврат от выбора ПВЗ OZON к выбору магазина."""
-    await query.answer()
-    logger.debug(
-        f"User {query.from_user.id} going back from PVZ to store selection.")
-    # Сбрасываем всё и перезапускаем выбор магазина
-    await start_send_code(query.message, state)
+# async def back_to_store_from_pvz(query: types.CallbackQuery, state: FSMContext):
+#     """Возврат от выбора ПВЗ OZON к выбору магазина."""
+#     await query.answer()
+#     logger.debug(
+#         f"User {query.from_user.id} going back from PVZ to store selection.")
+#     # Сбрасываем всё и перезапускаем выбор магазина
+#     await start_send_code(query.message, state)
 
 
 async def back_to_store_choice(query: types.CallbackQuery, state: FSMContext):
@@ -293,57 +315,35 @@ def register_send_code_handlers(dp):
     """Регистрация всех хендлеров, связанных с отправкой кода."""
     logger.debug("Registering send_code handlers...")
 
-    # Обработчик запуска сценария
     dp.register_message_handler(
         start_send_code,
         lambda msg: msg.text == "📤 Отправить код",
-        state="*"  # Может быть вызван из любого состояния
+        state="*"
     )
 
-    # Обработчик выбора магазина (только в состоянии CHOOSING_STORE)
     dp.register_callback_query_handler(
         process_store_choice,
         lambda q: q.data in ["store_ozon", "store_wildberries"],
         state=CodeStates.CHOOSING_STORE
     )
 
-    # Обработчик выбора адреса для пвз озон
-    dp.register_callback_query_handler(
-        process_ozon_pvz_choice,
-        lambda q: q.data.startswith("ozon_pvz_"),
-        state=CodeStates.CHOOSING_OZON_PVZ
-    )
-
-    # Обработчик кнопки "назад" для клавиатуры выбора адреса пвз озон
-    dp.register_callback_query_handler(
-        back_to_store_from_pvz,
-        lambda q: q.data == "back_to_store_choice",
-        state=CodeStates.CHOOSING_OZON_PVZ
-    )
-
-    # Обработчик фото (только в состоянии RECEIVING_CODE)
     dp.register_message_handler(
         process_code_photo,
         content_types=types.ContentType.PHOTO,
         state=CodeStates.RECEIVING_CODE
     )
 
-    # Обработчик выбора офиса (только в состоянии CHOOSING_OFFICE)
-    # Обрабатывает выбор офиса И кнопку "Назад"
     dp.register_callback_query_handler(
         process_office_choice,
-        lambda q: q.data.startswith(
-            "office_") or q.data == "back_to_store_choice",  # Оба случая
+        lambda q: q.data.startswith("office_") or q.data == "back_to_store_choice",
         state=CodeStates.CHOOSING_OFFICE
     )
 
-    # Обработчик ввода ФИО (только в состоянии WAITING_FOR_NAME)
     dp.register_message_handler(
         process_name_input,
         state=CodeStates.WAITING_FOR_NAME
     )
 
-    # Обработчик ввода телефона (только в состоянии WAITING_FOR_PHONE)
     dp.register_message_handler(
         process_phone_input,
         state=CodeStates.WAITING_FOR_PHONE
