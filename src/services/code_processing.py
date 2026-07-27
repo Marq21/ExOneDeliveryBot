@@ -6,6 +6,7 @@ from src.utils.generate_codes import generate_barcode_image_bytesio, generate_qr
 from src.utils.config_loader import ConfigLoader
 from src.bot_instance import bot
 from src.handlers.start import get_main_menu
+from src.utils.office_utils import get_office_by_id
 
 logger = logging.getLogger(__name__)
 
@@ -36,7 +37,16 @@ async def get_order_data_and_config(state: FSMContext) -> dict | None:
         return None
 
     config = ConfigLoader.get_config()
-    office_name = next((o["name"] for o in config["offices"] if o["id"] == office_id), office_id)
+
+    office = get_office_by_id(office_id)
+
+    if not office:
+        logger.error(
+            f"Office not found or unavailable: office_id={office_id}"
+        )
+        return None
+
+    office_name = office["name"]
 
     target_chat = None
     if store == "store_ozon":

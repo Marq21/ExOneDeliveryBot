@@ -11,6 +11,7 @@ services:
     # === КЛЮЧЕВОЕ: переопределяем DNS для Telegram API ===
     extra_hosts:
       - "api.telegram.org:149.154.167.220"
+      - "api.telegram.org:149.154.166.110"
     restart: unless-stopped
     logging:
       driver: "json-file"

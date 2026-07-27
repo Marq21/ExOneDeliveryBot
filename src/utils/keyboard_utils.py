@@ -5,6 +5,7 @@
 import aiogram.types
 from pathlib import Path
 from src.utils.config_loader import ConfigLoader
+from src.utils.office_utils import get_available_offices
 
 
 def get_main_menu() -> aiogram.types.ReplyKeyboardMarkup:
@@ -71,25 +72,29 @@ def get_office_keyboard() -> aiogram.types.InlineKeyboardMarkup:
     Использует данные из конфига: offices.
     """
     keyboard = aiogram.types.InlineKeyboardMarkup(row_width=1)
-    config = ConfigLoader.get_config()
-    for office in config.get("offices", []):
+
+    for office in get_available_offices():
         # Извлекаем часть адреса до первой запятой для краткости
         full_address = office['address']
-        short_address = full_address.split(
-            ',')[0] if ',' in full_address else full_address
+        short_address = full_address.split(',')[0] if ',' in full_address else full_address
         button_text = f"📍 {office['name']} ({short_address})"
+
         keyboard.add(
             aiogram.types.InlineKeyboardButton(
                 text=button_text,
                 callback_data=f"office_{office['id']}"
             )
         )
+
     keyboard.row(
         aiogram.types.InlineKeyboardButton(
-            "◀️ Назад", callback_data="back_to_store_choice"),
+            "◀️ Назад", callback_data="back_to_store_choice"
+        ),
         aiogram.types.InlineKeyboardButton(
-            "🏠 В меню", callback_data="back_to_menu")
+            "🏠 В меню", callback_data="back_to_menu"
+        )
     )
+
     return keyboard
 
 

@@ -12,9 +12,12 @@ from src.services.code_processing import process_final_order_data
 import aiofiles
 import aiofiles.os as aios
 from src.utils.store_utils import get_readable_store_name
+from src.utils.config_loader import ConfigLoader
+from src.utils.office_utils import is_office_available
 from src.utils.keyboard_utils import (
     get_main_menu,
     get_store_selection_keyboard,
+    get_office_keyboard,
     # get_ozon_pvz_keyboard,
 )
 
@@ -96,7 +99,8 @@ async def process_store_choice(query: types.CallbackQuery, state: FSMContext):
             await bot.send_message(chat_id=query.from_user.id, text=caption, parse_mode="HTML")
 
         await state.set_state(CodeStates.RECEIVING_CODE)
-        logger.debug(f"Set state to RECEIVING_CODE for user {user_id} (OZON, PVZ=trolleibusnaya)")
+        logger.debug(
+            f"Set state to RECEIVING_CODE for user {user_id} (OZON, PVZ=trolleibusnaya)")
 
     elif callback_data == "store_wildberries":
         await state.update_data(store="store_wildberries")
@@ -139,58 +143,6 @@ async def process_store_choice(query: types.CallbackQuery, state: FSMContext):
         await query.message.answer("Выберите действие:", reply_markup=get_main_menu())
 
 
-# async def process_ozon_pvz_choice(query: types.CallbackQuery, state: FSMContext):
-#     """Обработка выбора ПВЗ OZON."""
-#     await query.answer()
-#     user_id = query.from_user.id
-#     pvz_id = query.data.replace("ozon_pvz_", "")
-#     logger.debug(f"User {user_id} selected OZON PVZ: {pvz_id}")
-
-#     # Сохраняем выбранный ПВЗ
-#     await state.update_data(ozon_pvz_id=pvz_id)
-
-#     # Получаем описание и пример
-#     example_photo = "ozon-ok.jpg"
-#     photo_path = Path("static") / "images" / example_photo
-#     store_description = get_store_description("store_ozon")
-#     readable_store_name = get_readable_store_name("store_ozon")
-#     caption = (
-#         f"📸 <b>Отправьте скриншот с кодом выдачи</b>\n"
-#         f"Для {readable_store_name}: {store_description}\n"
-#         "<i>Убедитесь, что код хорошо виден на фото</i>"
-#     )
-
-#     try:
-#         if await aios.path.exists(photo_path):
-#             async with aiofiles.open(photo_path, "rb") as f:
-#                 photo_bytes = await f.read()
-#             await bot.send_photo(
-#                 chat_id=query.from_user.id,
-#                 photo=photo_bytes,
-#                 caption=caption,
-#                 parse_mode="HTML"
-#             )
-#         else:
-#             await bot.send_message(chat_id=query.from_user.id, text=caption, parse_mode="HTML")
-#     except Exception as e:
-#         logger.error(
-#             f"Error sending OZON example photo after PVZ selection: {e}")
-#         await bot.send_message(chat_id=query.from_user.id, text=caption, parse_mode="HTML")
-
-#     await state.set_state(CodeStates.RECEIVING_CODE)
-#     logger.debug(
-#         f"Set state to RECEIVING_CODE after PVZ selection for user {user_id}")
-
-
-# async def back_to_store_from_pvz(query: types.CallbackQuery, state: FSMContext):
-#     """Возврат от выбора ПВЗ OZON к выбору магазина."""
-#     await query.answer()
-#     logger.debug(
-#         f"User {query.from_user.id} going back from PVZ to store selection.")
-#     # Сбрасываем всё и перезапускаем выбор магазина
-#     await start_send_code(query.message, state)
-
-
 async def back_to_store_choice(query: types.CallbackQuery, state: FSMContext):
     """
     Возврат к выбору магазина.
@@ -217,71 +169,164 @@ async def process_code_photo(message: types.Message, state: FSMContext):
     await process_final_code_photo(message, state)
 
 
+async def _is_expected_state(
+    query: types.CallbackQuery,
+    state: FSMContext,
+    expected_state: str
+) -> bool:
+    """
+    Проверяет, что пользователь находится в ожидаемом FSM-состоянии.
+    """
+    current_state = await state.get_state()
+
+    if current_state != expected_state:
+        user_id = query.from_user.id
+
+        logger.warning(
+            f"State mismatch for user {user_id}. "
+            f"Expected {expected_state}, got {current_state}"
+        )
+
+        await query.message.edit_text("❌ Ошибка состояния. Попробуйте заново.")
+        await state.finish()
+        await query.message.answer(
+            "Выберите действие:",
+            reply_markup=get_main_menu()
+        )
+
+        return False
+
+    return True
+
+
+async def _notify_office_unavailable(
+    query: types.CallbackQuery,
+    office_id: str
+) -> None:
+    """
+    Сообщает пользователю, что выбранный офис недоступен.
+    """
+    user_id = query.from_user.id
+
+    logger.warning(
+        f"User {user_id} tried to select unavailable office: {office_id}"
+    )
+
+    error_text = (
+        "❌ Этот пункт выдачи сейчас недоступен.\n"
+        "Пожалуйста, выберите другой офис:"
+    )
+
+    try:
+        await query.message.edit_text(
+            error_text,
+            reply_markup=get_office_keyboard()
+        )
+    except Exception:
+        await query.message.answer(
+            error_text,
+            reply_markup=get_office_keyboard()
+        )
+
+
+async def _process_valid_office_choice(
+    query: types.CallbackQuery,
+    state: FSMContext,
+    office_id: str
+) -> None:
+    """
+    Обрабатывает корректный выбор офиса и переводит пользователя дальше.
+    """
+    user_id = query.from_user.id
+
+    await state.update_data(office_id=office_id)
+
+    # Удаляем сообщение с выбором офиса
+    try:
+        await query.message.delete()
+    except Exception:
+        pass
+
+    data = await state.get_data()
+    store = data.get("store")
+
+    if store == "store_ozon":
+        await query.message.answer(
+            "👤 <b>Введите ваше ФИО:</b>\n"
+            "<i>Фамилия Имя Отчество</i>",
+            parse_mode="HTML"
+        )
+        await state.set_state(CodeStates.WAITING_FOR_NAME)
+
+        logger.debug(
+            f"Set state to WAITING_FOR_NAME for user {user_id}"
+        )
+
+    elif store == "store_wildberries":
+        await query.message.answer(
+            "📱 <b>Введите ваш номер телефона:</b>\n"
+            "<i>Формат: +7 XXX XXX-XX-XX</i>",
+            parse_mode="HTML"
+        )
+        await state.set_state(CodeStates.WAITING_FOR_PHONE)
+
+        logger.debug(
+            f"Set state to WAITING_FOR_PHONE for user {user_id}"
+        )
+
+    else:
+        logger.error(
+            f"Store not set in FSM for user {user_id}"
+        )
+
+        await query.message.answer("❌ Ошибка данных. Попробуйте снова.")
+        await state.finish()
+
+
 async def process_office_choice(query: types.CallbackQuery, state: FSMContext):
     """Обработка выбора офиса."""
     await query.answer()
+
     user_id = query.from_user.id
     callback_data = query.data
-    logger.debug(
-        f"Callback 'process_office_choice' received: {callback_data} from user {user_id}")
 
-    # Проверяем состояние FSM
-    current_state = await state.get_state()
-    if current_state != CodeStates.CHOOSING_OFFICE.state:
-        logger.warning(
-            f"State mismatch for user {user_id}. Expected {CodeStates.CHOOSING_OFFICE.state}, got {current_state}")
-        await query.message.edit_text("❌ Ошибка состояния. Попробуйте заново.")
-        await state.finish()
-        # Возвращаем главное меню
-        await query.message.answer("Выберите действие:", reply_markup=get_main_menu())
+    logger.debug(
+        f"Callback 'process_office_choice' received: {callback_data} "
+        f"from user {user_id}"
+    )
+
+    if not await _is_expected_state(
+        query,
+        state,
+        CodeStates.CHOOSING_OFFICE.state
+    ):
         return
 
-    # Обработка кнопки "Назад" - вызываем функцию возврата
+    # Обработка кнопки "Назад"
     if callback_data == "back_to_store_choice":
-        logger.debug(f"User {user_id} chose to go back to store selection.")
+        logger.debug(
+            f"User {user_id} chose to go back to store selection."
+        )
+
         await back_to_store_choice(query, state)
-        return  # Важно: выходим, чтобы не выполнять остальную логику
+        return
 
     # Обработка выбора офиса
     if callback_data.startswith("office_"):
         office_id = callback_data.replace("office_", "")
-        await state.update_data(office_id=office_id)
 
-        # Удаляем сообщение с выбором офиса
-        try:
-            await query.message.delete()
-        except Exception:
-            pass  # Игнорируем ошибки при удалении
+        if not is_office_available(office_id):
+            await _notify_office_unavailable(query, office_id)
+            return
 
-        # Получаем данные из FSM
-        data = await state.get_data()
-        store = data.get('store')
+        await _process_valid_office_choice(query, state, office_id)
+        return
 
-        if store == "store_ozon":
-            await query.message.answer(
-                "👤 <b>Введите ваше ФИО:</b>\n<i>Фамилия Имя Отчество</i>",
-                parse_mode="HTML"
-            )
-            await state.set_state(CodeStates.WAITING_FOR_NAME)
-
-            logger.debug(f"Set state to WAITING_FOR_NAME for user {user_id}")
-        elif store == "store_wildberries":
-            await query.message.answer(
-                "📱 <b>Введите ваш номер телефона:</b>\n<i>Формат: +7 XXX XXX-XX-XX</i>",
-                parse_mode="HTML"
-            )
-            await state.set_state(CodeStates.WAITING_FOR_PHONE)
-            logger.debug(f"Set state to WAITING_FOR_PHONE for user {user_id}")
-        else:
-            # На всякий случай, если store не определён
-            logger.error(f"Store not set in FSM for user {user_id}")
-            await query.message.answer("❌ Ошибка данных. Попробуйте снова.")
-            await state.finish()
-    else:
-        # Неожиданный callback_data в этом состоянии (кроме back_to_store_choice)
-        logger.warning(
-            f"Unexpected callback_data '{callback_data}' in CHOOSING_OFFICE for user {user_id}")
-
+    # Неожиданный callback_data
+    logger.warning(
+        f"Unexpected callback_data '{callback_data}' "
+        f"in CHOOSING_OFFICE for user {user_id}"
+    )
 
 async def process_name_input(message: types.Message, state: FSMContext):
     """Обработка ввода ФИО (только для OZON)."""
@@ -335,7 +380,8 @@ def register_send_code_handlers(dp):
 
     dp.register_callback_query_handler(
         process_office_choice,
-        lambda q: q.data.startswith("office_") or q.data == "back_to_store_choice",
+        lambda q: q.data.startswith(
+            "office_") or q.data == "back_to_store_choice",
         state=CodeStates.CHOOSING_OFFICE
     )
 
