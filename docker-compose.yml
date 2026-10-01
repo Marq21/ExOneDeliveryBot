@@ -1,13 +1,11 @@
 services:
   bot:
     build: .
+    network_mode: host
     env_file:
       - .env
     environment:
       - TZ=Europe/Moscow
-    dns:
-      - 8.8.8.8
-      - 1.1.1.1
     restart: unless-stopped
     logging:
       driver: "json-file"
