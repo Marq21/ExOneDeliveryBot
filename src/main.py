@@ -43,15 +43,12 @@ async def heartbeat():
 async def resilient_polling():
     """
     Запуск polling с автоматическим перезапуском при сбоях.
-    Если get_updates падает из-за сетевой ошибки — ждём и пробуем снова.
     """
     while True:
         try:
             logger.info("🔄 Запуск polling...")
-            # В aiogram 2.x:
-            #   fast=True (по умолчанию) = пропустить старые апдейты
-            #   НЕ передаём skip_updates — его здесь нет!
-            await dp.start_polling(bot)
+            # reset_webhook=False — не пытаемся удалить вебхук (это вызывает таймаут)
+            await dp.start_polling(bot, reset_webhook=False)
         except KeyboardInterrupt:
             logger.info("⛔ Получен сигнал остановки (KeyboardInterrupt).")
             break

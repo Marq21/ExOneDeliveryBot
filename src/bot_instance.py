@@ -8,19 +8,24 @@ from src.middleware.antispam_middleware import AntispamMiddleware
 class TimeoutBot(Bot):
     """
     Bot с кастомными таймаутами aiohttp-сессии.
-    В aiogram 2.x нельзя передать session в конструктор,
-    поэтому переопределяем get_session().
     """
 
     async def get_session(self) -> aiohttp.ClientSession:
         """Возвращает (или создаёт) aiohttp-сессию с разумными таймаутами."""
         if self._session is None or self._session.closed:
             timeout = aiohttp.ClientTimeout(
-                total=60,       # общий таймаут запроса
-                connect=10,     # таймаут установки TCP-соединения
-                sock_read=30,   # таймаут ожидания данных от сервера
+                total=120,      # увеличен с 60
+                connect=30,     # увеличен с 10
+                sock_read=60,   # увеличен с 30
             )
-            self._session = aiohttp.ClientSession(timeout=timeout)
+            # family=socket.AF_INET — принудительно использовать IPv4
+            # Это обходит проблему, если IPv6 работает, а IPv4 нет
+            connector = aiohttp.TCPConnector(family=2)  # AF_INET = 2
+            
+            self._session = aiohttp.ClientSession(
+                timeout=timeout,
+                connector=connector,
+            )
         return self._session
 
 
