@@ -9,29 +9,30 @@ from src.middleware.antispam_middleware import AntispamMiddleware
 
 class TimeoutBot(Bot):
     """
-    Bot с оптимизированными таймаутами и поддержкой Happy Eyeballs.
+    Bot с оптимизированными таймаутами и настройками пула соединений.
     """
 
     async def get_session(self) -> aiohttp.ClientSession:
         """Возвращает aiohttp-сессию с оптимизированными параметрами."""
         if self._session is None or self._session.closed:
+            # Уменьшаем таймауты, чтобы бот не висел по минуте при сетевых проблемах
             timeout = aiohttp.ClientTimeout(
-                total=60,       # общий таймаут запроса
-                connect=10,     # уменьшен с 30 до 10 секунд
-                sock_connect=5, # НОВОЕ: таймаут именно на установку TCP-соединения
-                sock_read=30,   # уменьшен с 60 до 30 секунд
+                total=60,        # общий таймаут запроса
+                connect=10,      # таймаут на установку соединения (было 30)
+                sock_connect=5,  # жёсткий таймаут на TCP-handshake
+                sock_read=30,    # таймаут ожидания данных (было 60)
             )
             
-            # Коннектор с Happy Eyeballs
-            # family=AF_UNSPEC - разрешает и IPv4, и IPv6
-            # happy_eyeballs_delay=0.25 - если IPv4 не отвечает 250 мс, пробуем IPv6
-            # ttl_dns_cache=300 - кэшируем DNS на 5 минут, чтобы не спамить резолвер
+            # Настраиваем коннектор
+            # family=AF_UNSPEC разрешает и IPv4, и IPv6
+            # ttl_dns_cache=300 кэширует DNS на 5 минут
+            # enable_cleanup_closed=True предотвращает утечки сокетов
             connector = aiohttp.TCPConnector(
                 family=socket.AF_UNSPEC,
-                happy_eyeballs_delay=0.25,
                 ttl_dns_cache=300,
                 limit=100,                  # максимум одновременных соединений
                 limit_per_host=20,          # максимум соединений к api.telegram.org
+                enable_cleanup_closed=True,
             )
             
             self._session = aiohttp.ClientSession(
